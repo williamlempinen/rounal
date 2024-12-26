@@ -1,6 +1,6 @@
-mod app;
-mod error;
-mod journal;
-mod system;
+pub mod app;
+pub mod error;
+pub mod journal;
+pub mod system;
 pub mod ui;
-mod util;
+pub mod util;

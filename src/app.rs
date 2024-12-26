@@ -1,15 +1,25 @@
-use crate::{journal, system, ui::UiView, util};
+use std::sync::{Arc, RwLock};
+
+use crate::{journal, system::Service, util};
 
 use anyhow::Result;
 
+pub enum View {
+    Jounrnalctl,
+    Systemctl,
+}
+
 struct App {
-    quit: bool,
-    current_view: UiView,
+    pub quit: bool,
+    pub logs: Arc<RwLock<Vec<String>>>,
+    pub services: Arc<RwLock<Vec<Service>>>,
+    pub current_view: View,
+    pub modal_visible: bool,
 }
 
 impl App {
     fn new() -> Self {
-        Self
+        todo!("TODO");
     }
 }
 
