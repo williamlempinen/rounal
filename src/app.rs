@@ -1,6 +1,6 @@
 use std::sync::{Arc, RwLock};
 
-use crate::{journal, system::Service, util};
+use crate::{journal, util};
 
 use anyhow::Result;
 
@@ -12,7 +12,7 @@ pub enum View {
 struct App {
     pub quit: bool,
     pub logs: Arc<RwLock<Vec<String>>>,
-    pub services: Arc<RwLock<Vec<Service>>>,
+    pub services: Arc<RwLock<Vec<String>>>,
     pub current_view: View,
     pub modal_visible: bool,
 }
