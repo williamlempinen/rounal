@@ -1,6 +1,15 @@
 use anyhow::Result;
 
-use rounal::{journal::get_logs, system::get_services};
+use crossterm::{
+    terminal::{disable_raw_mode, enable_raw_mode},
+    ExecutableCommand,
+};
+use ratatui::{prelude::CrosstermBackend, Terminal};
+use rounal::{
+    app::{run, App},
+    journal::get_logs,
+    system::get_services,
+};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -30,32 +39,29 @@ async fn main() -> Result<()> {
     //}
 
     // Setup terminal for TUI
-    enable_raw_mode()?; // Enable raw mode
-    let mut stdout = io::stdout();
-    stdout.execute(EnterAlternateScreen)?; // Enter alternate screen
-    let backend = CrosstermBackend::new(stdout);
+    enable_raw_mode()?;
+
+    // Prepare terminal
+    let mut stdout = std::io::stdout(); // Import `stdout` from `std::io`
+    stdout.execute(crossterm::terminal::EnterAlternateScreen)?; // Enter alternate screen
+
+    // Pass mutable reference to avoid moving ownership
+    let backend = CrosstermBackend::new(&mut stdout);
     let terminal = Terminal::new(backend)?;
 
-    // Initialize the app state
-    let mut app = App::new();
-    app.logs
-        .write()?
-        .extend(logs.into_iter().map(|log| format!("{:?}", log)));
-    app.services
-        .write()?
-        .extend(services.0.into_iter().map(|unit| format!("{:?}", unit)));
+    // Initialize app
+    let app = App::new();
 
-    // Run the TUI application
-    let res = rounal::app::run(terminal, app).await;
+    // Run the application
+    let res = run(terminal, app);
 
     // Restore terminal state
-    disable_raw_mode()?; // Disable raw mode
-    let mut stdout = io::stdout();
-    stdout.execute(LeaveAlternateScreen)?; // Leave alternate screen
+    disable_raw_mode()?;
+    stdout.execute(crossterm::terminal::LeaveAlternateScreen)?; // Leave alternate screen
 
-    // Handle errors, if any
+    // Handle errors if any
     if let Err(err) = res {
-        eprintln!("Application error: {:?}", err);
+        eprintln!("Error: {}", err);
     }
 
     Ok(())

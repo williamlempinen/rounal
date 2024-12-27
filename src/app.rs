@@ -38,7 +38,9 @@ pub fn start() -> Result<()> {
     let mut stdout = stdout();
     enable_raw_mode()?; // Enable raw mode for the terminal
     stdout.execute(crossterm::terminal::EnterAlternateScreen)?; // Use an alternate screen
-    let backend = CrosstermBackend::new(stdout);
+
+    // Pass mutable reference to avoid moving ownership
+    let backend = CrosstermBackend::new(&mut stdout);
     let terminal = Terminal::new(backend)?;
 
     let app = App::new();
@@ -51,7 +53,7 @@ pub fn start() -> Result<()> {
     res
 }
 
-fn run<B: ratatui::backend::Backend>(mut terminal: Terminal<B>, mut app: App) -> Result<()> {
+pub fn run<B: ratatui::backend::Backend>(mut terminal: Terminal<B>, mut app: App) -> Result<()> {
     while !app.quit {
         // Draw the TUI
         terminal.draw(|frame| {
