@@ -1,28 +1,24 @@
 use anyhow::Result;
 
-use rounal::system::{get_list_unit_files, get_list_units};
+use rounal::system::get_services;
 
 #[tokio::main]
 async fn main() -> Result<()> {
     println!("Rounal!");
 
-    let service_units = get_list_units().await?;
-    let service_files = get_list_unit_files().await?;
+    let services = get_services().await?;
 
-    for service in service_units {
+    for unit in services.0 {
         println!(
             "{:?},{:?},{:?},{:?},{:?}",
-            service.name, service.load, service.active, service.sub, service.description
+            unit.name, unit.load, unit.active, unit.sub, unit.description
         );
     }
 
     println!("######################");
 
-    for service in service_files {
-        println!(
-            "{:?}, {:?}, {:?}",
-            service.name, service.state, service.preset
-        );
+    for unit in services.1 {
+        println!("{:?}, {:?}, {:?}", unit.name, unit.state, unit.preset);
     }
 
     Ok(())

@@ -13,6 +13,7 @@ pub enum State {
     Indirect,
     Generated,
     EnabledRuntime,
+    Transient,
     Unknown,
 }
 
@@ -23,7 +24,8 @@ impl State {
             "disabled" => Self::Disabled,
             "static" => Self::Static,
             "masked" => Self::Masked,
-            "alias" => Self::Masked,
+            "alias" => Self::Alias,
+            "transient" => Self::Transient,
             "indirect" => Self::Indirect,
             "generated" => Self::Generated,
             "enabled-runtime" => Self::EnabledRuntime,
@@ -135,6 +137,16 @@ pub struct ServiceUnitFiles {
 pub type SharedServiceUnits = Arc<RwLock<ServiceUnits>>;
 pub type SharedServiceUnitFiles = Arc<RwLock<ServiceUnitFiles>>;
 
+pub async fn get_services() -> Result<(Vec<ServiceUnits>, Vec<ServiceUnitFiles>)> {
+    let units = tokio::spawn(get_list_units());
+    let unit_files = tokio::spawn(get_list_unit_files());
+
+    let units = units.await.context("Failed to fetch units")??;
+    let unit_files = unit_files.await.context("Failed to fetch unit files")??;
+
+    Ok((units, unit_files))
+}
+
 pub async fn get_list_units() -> Result<Vec<ServiceUnits>> {
     let out = Command::new("systemctl")
         .arg("list-units")
@@ -160,6 +172,7 @@ pub async fn get_list_units() -> Result<Vec<ServiceUnits>> {
 }
 
 fn parse_service_units(service_line: &str) -> Option<ServiceUnits> {
+    // unit can be also flagged, i.e. not-found
     let idx = if service_line.starts_with('●') {
         1
     } else {
