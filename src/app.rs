@@ -1,7 +1,8 @@
 use std::sync::{Arc, RwLock};
 
+use crate::system::{get_services, ServiceUnits};
 use crate::ui::draw_ui;
-use anyhow::Result;
+use crate::{AppError, Result};
 use crossterm::event::{self, Event, KeyCode};
 use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
 use crossterm::ExecutableCommand;
@@ -9,66 +10,87 @@ use ratatui::backend::CrosstermBackend;
 use ratatui::Terminal;
 use std::io::stdout;
 
-pub enum View {
-    Journalctl,
-    Systemctl,
+pub struct App {
+    pub is_running: bool,
+    pub logs: Arc<RwLock<Vec<String>>>,
+    pub services: Arc<RwLock<Vec<ServiceUnits>>>,
+    pub selected_service: Option<String>,
+    pub selected_priority: Option<u8>,
 }
 
-pub struct App {
-    pub quit: bool,
-    pub logs: Arc<RwLock<Vec<String>>>,     // Logs from journalctl
-    pub services: Arc<RwLock<Vec<String>>>, // Services from systemctl
-    pub current_view: View,                 // Current view in the TUI
-    pub modal_visible: bool,                // If a modal is visible
+pub enum KeyEvents {
+    Quit,
+    Select(String),
 }
 
 impl App {
     pub fn new() -> Self {
         Self {
-            quit: false,
+            is_running: false,
             logs: Arc::new(RwLock::new(Vec::new())),
             services: Arc::new(RwLock::new(Vec::new())),
-            current_view: View::Journalctl,
-            modal_visible: false,
+            selected_service: None,
+            selected_priority: Some(3), // default priority to 3 / errors
         }
+    }
+
+    pub fn set_services(&mut self, services: Vec<ServiceUnits>) -> Result<()> {
+        let mut write_guard = self
+            .services
+            .write()
+            .map_err(|_| AppError::UnexpectedError)?;
+
+        write_guard.clear();
+        write_guard.extend(services);
+
+        Ok(())
     }
 }
 
-pub fn start() -> Result<()> {
+pub async fn start_application() -> Result<()> {
     let mut stdout = stdout();
-    enable_raw_mode()?; // Enable raw mode for the terminal
-    stdout.execute(crossterm::terminal::EnterAlternateScreen)?; // Use an alternate screen
+    enable_raw_mode()?;
+    stdout.execute(crossterm::terminal::EnterAlternateScreen)?;
 
-    // Pass mutable reference to avoid moving ownership
-    let backend = CrosstermBackend::new(&mut stdout);
-    let terminal = Terminal::new(backend)?;
+    {
+        let backend = CrosstermBackend::new(&mut stdout);
+        let mut terminal = Terminal::new(backend).map_err(AppError::TerminalError)?;
 
-    let app = App::new();
-    let res = run(terminal, app);
+        let mut app = App::new();
+        let (service_units, _service_unit_files) = get_services().await?;
 
-    // Restore terminal state
+        App::set_services(&mut app, service_units)?;
+
+        run(&mut terminal, app).await?;
+    }
+
     disable_raw_mode()?;
     stdout.execute(crossterm::terminal::LeaveAlternateScreen)?;
 
-    res
+    Ok(())
 }
 
-pub fn run<B: ratatui::backend::Backend>(mut terminal: Terminal<B>, mut app: App) -> Result<()> {
-    while !app.quit {
-        // Draw the TUI
+async fn run<B: ratatui::backend::Backend>(terminal: &mut Terminal<B>, mut app: App) -> Result<()> {
+    while app.is_running {
         terminal.draw(|frame| {
             draw_ui(frame, &app);
         })?;
 
-        // Handle user input
-        if let Event::Key(key) = event::read()? {
-            match key.code {
-                KeyCode::Char('q') => app.quit = true, // Quit the app
-                KeyCode::Char('j') => app.current_view = View::Journalctl, // Switch to journalctl view
-                KeyCode::Char('s') => app.current_view = View::Systemctl, // Switch to systemctl view
-                _ => {}
-            }
+        match listen_key_events() {
+            Some(KeyEvents::Quit) => app.is_running = false,
+            _ => {}
         }
     }
     Ok(())
+}
+
+fn listen_key_events() -> Option<KeyEvents> {
+    if let Event::Key(key) = event::read().expect("Error reading keys") {
+        match key.code {
+            KeyCode::Char('q') => Some(KeyEvents::Quit),
+            _ => None,
+        }
+    } else {
+        None
+    }
 }

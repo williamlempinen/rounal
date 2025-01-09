@@ -4,3 +4,5 @@ pub mod journal;
 pub mod system;
 pub mod ui;
 pub mod util;
+
+pub use error::{AppError, Result};

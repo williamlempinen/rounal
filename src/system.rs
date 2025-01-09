@@ -1,7 +1,8 @@
 use std::sync::{Arc, RwLock};
 
-use anyhow::{bail, Context, Ok, Result};
 use tokio::process::Command;
+
+use crate::{AppError, Result};
 
 #[derive(Debug, Clone)]
 pub enum State {
@@ -141,8 +142,13 @@ pub async fn get_services() -> Result<(Vec<ServiceUnits>, Vec<ServiceUnitFiles>)
     let units = tokio::spawn(get_list_units());
     let unit_files = tokio::spawn(get_list_unit_files());
 
-    let units = units.await.context("Failed to fetch units")??;
-    let unit_files = unit_files.await.context("Failed to fetch unit files")??;
+    let units = units
+        .await
+        .map_err(|e| AppError::SystemCtlError(format!("Failed to spawn units task: {}", e)))??;
+
+    let unit_files = unit_files.await.map_err(|e| {
+        AppError::SystemCtlError(format!("Failed to spawn unit files task: {}", e))
+    })??;
 
     Ok((units, unit_files))
 }
@@ -153,11 +159,13 @@ pub async fn get_list_units() -> Result<Vec<ServiceUnits>> {
         .arg("--type=service")
         .arg("--all")
         .output()
-        .await
-        .context("Failed running systemctl")?;
+        .await?;
 
     if !out.status.success() {
-        bail!("Systemctl failed with: {:?}", out.status);
+        return Err(AppError::SystemCtlError(format!(
+            "{}",
+            String::from_utf8_lossy(&out.stderr).to_string()
+        )));
     }
 
     let stdout = String::from_utf8_lossy(&out.stdout);
@@ -212,11 +220,13 @@ pub async fn get_list_unit_files() -> Result<Vec<ServiceUnitFiles>> {
         .arg("--type=service")
         .arg("--all")
         .output()
-        .await
-        .context("Failed running systemctl")?;
+        .await?;
 
     if !out.status.success() {
-        bail!("Systemctl failed with: {:?}", out.status);
+        return Err(AppError::SystemCtlError(format!(
+            "{}",
+            String::from_utf8_lossy(&out.stderr).to_string()
+        )));
     }
 
     let stdout = String::from_utf8_lossy(&out.stdout);

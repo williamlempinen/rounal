@@ -4,9 +4,9 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-anyhow = "1.0.95"
 crossterm = "0.28.1"
 ratatui = "0.29.0"
 serde = "1.0.216"
 serde_json = "1.0.134"
+thiserror = "2.0.10"
 tokio = {version = "1.42.0", features = ["full"]}

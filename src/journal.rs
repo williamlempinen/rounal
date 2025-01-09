@@ -1,5 +1,6 @@
-use anyhow::{bail, Context, Result};
 use tokio::process::Command;
+
+use crate::{AppError, Result};
 
 #[derive(Debug, Clone)]
 pub struct Log {
@@ -10,16 +11,23 @@ pub struct Log {
     pub service: String,
 }
 
-pub async fn get_logs(priority: u8) -> Result<Vec<Log>> {
-    let out = Command::new("journalctl")
+pub async fn get_logs(service: &str, priority: u8) -> Result<Vec<Log>> {
+    let out = Command::new("sudo")
+        .arg("journalctl")
+        .arg("-u")
+        .arg(service)
+        .arg("-r")
         .arg("-p")
         .arg(priority.to_string())
         .output()
-        .await
-        .context("Failed to execute journalctl")?;
+        .await?;
 
     if !out.status.success() {
-        bail!("Command failed");
+        return Err(AppError::JournalCtlError(format!(
+            "{}, {}",
+            service.to_string(),
+            String::from_utf8_lossy(&out.stderr).to_string()
+        )));
     }
 
     let stdout = String::from_utf8_lossy(&out.stdout);
@@ -37,7 +45,7 @@ fn parse_log(log_line: &str, p: &u8) -> Option<Log> {
     let parts: Vec<&str> = log_line.split_whitespace().collect();
 
     match p {
-        4 => {
+        1..=7 => {
             println!("Priority is 4");
             let priority = p.clone();
             let timestamp = parts.get(..3)?.join(" ");
