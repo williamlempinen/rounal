@@ -26,7 +26,7 @@ pub enum KeyEvents {
 impl App {
     pub fn new() -> Self {
         Self {
-            is_running: false,
+            is_running: true,
             logs: Arc::new(RwLock::new(Vec::new())),
             services: Arc::new(RwLock::new(Vec::new())),
             selected_service: None,
