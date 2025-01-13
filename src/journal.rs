@@ -11,7 +11,7 @@ pub struct Log {
     pub service: String,
 }
 
-pub async fn get_logs(service: &str, priority: u8) -> Result<Vec<Log>> {
+pub async fn get_logs(service: &String, priority: u8) -> Result<Vec<Log>> {
     let out = Command::new("sudo")
         .arg("journalctl")
         .arg("-u")

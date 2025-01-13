@@ -11,32 +11,25 @@ use ratatui::{
 };
 
 // handle the result/error
-pub async fn draw_ui(frame: &mut Frame<'_>, app: &App) -> Result<()> {
+pub fn draw_ui(frame: &mut Frame<'_>, app: &App) -> Result<()> {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([Constraint::Percentage(95), Constraint::Percentage(5)].as_ref())
         .split(frame.area());
 
     if app.is_modal {
-        let service_logs = get_logs(
-            app.selected_service
-                .as_ref()
-                .expect("Error getting the selected service"),
-            app.selected_priority.unwrap_or_default(),
-        )
-        .await?;
-
-        let logs: Vec<_> = service_logs
-            .iter()
-            .map(|log| {
-                format!(
-                    "{} {} {} {} \n",
-                    log.timestamp, log.hostname, log.log_message, log.service
-                )
+        let logs = app
+            .logs
+            .as_ref()
+            .map(|logs| {
+                logs.iter()
+                    .map(|log| format!("{:?}", log))
+                    .collect::<Vec<_>>()
+                    .join("\n")
             })
-            .collect();
+            .unwrap_or_else(|| "No logs available".to_string());
 
-        let logs_modal = Paragraph::new(logs.join("\n")).block(
+        let logs_modal = Paragraph::new(logs).block(
             Block::default()
                 .borders(Borders::ALL)
                 .title(format!(

@@ -1,5 +1,6 @@
 use std::sync::{Arc, RwLock};
 
+use crate::journal::{get_logs, Log};
 use crate::system::{get_services, ServiceUnits};
 use crate::ui::draw_ui;
 use crate::{AppError, Result};
@@ -14,7 +15,7 @@ pub struct App {
     pub is_running: bool,
     pub current_line: usize,
     pub is_modal: bool,
-    pub logs: Arc<RwLock<Vec<String>>>,
+    pub logs: Option<Vec<Log>>,
     pub services: Arc<RwLock<Vec<ServiceUnits>>>,
     pub selected_service: Option<String>,
     pub selected_priority: Option<u8>,
@@ -22,7 +23,7 @@ pub struct App {
 
 pub enum KeyEvents {
     Quit,
-    Select(String),
+    Select,
 }
 
 impl App {
@@ -31,7 +32,7 @@ impl App {
             is_running: true,
             current_line: 0,
             is_modal: false,
-            logs: Arc::new(RwLock::new(Vec::new())),
+            logs: None,
             services: Arc::new(RwLock::new(Vec::new())),
             selected_service: None,
             selected_priority: Some(3), // default priority to 3 / errors
@@ -47,6 +48,10 @@ impl App {
         write_guard.extend(services);
 
         Ok(())
+    }
+
+    pub fn set_logs(&mut self, logs: Vec<Log>) {
+        self.logs = Some(logs);
     }
 }
 
@@ -76,11 +81,18 @@ pub async fn start_application() -> Result<()> {
 async fn run<B: ratatui::backend::Backend>(terminal: &mut Terminal<B>, mut app: App) -> Result<()> {
     while app.is_running {
         terminal.draw(|frame| {
-            let _ = draw_ui(frame, &app);
+            draw_ui(frame, &app);
         })?;
 
         match listen_key_events(&mut app) {
             Some(KeyEvents::Quit) => app.is_running = false,
+            Some(KeyEvents::Select) => {
+                if let Some(service) = &app.selected_service {
+                    let service_logs =
+                        get_logs(service, app.selected_priority.unwrap_or_default()).await?;
+                    app.set_logs(service_logs);
+                }
+            }
             _ => {}
         }
     }
@@ -108,19 +120,22 @@ fn listen_key_events(app: &mut App) -> Option<KeyEvents> {
                 None
             }
             KeyCode::Enter => {
-                let services = app.services.read().unwrap();
+                let services = app.services.read().expect("Could not read services");
 
                 if let Some(service) = services.get(app.current_line) {
                     app.selected_service = Some(service.name.clone());
                     app.is_modal = true;
+                    app.logs = None;
                 }
-                None
+
+                Some(KeyEvents::Select)
             }
             KeyCode::Char('c') => {
                 if app.is_modal {
                     app.is_modal = false;
                     app.selected_service = None;
                 }
+
                 None
             }
             _ => None,
