@@ -21,9 +21,9 @@ pub struct App {
     pub selected_priority: Option<u8>,
 }
 
-pub enum KeyEvents {
+pub enum KeyEvents<'a> {
     Quit,
-    Select,
+    EnterFor(&'a str),
 }
 
 impl App {
@@ -35,7 +35,7 @@ impl App {
             logs: None,
             services: Arc::new(RwLock::new(Vec::new())),
             selected_service: None,
-            selected_priority: Some(3), // default priority to 3 / errors
+            selected_priority: Some(4), // default priority to 3 / errors
         }
     }
 
@@ -81,12 +81,12 @@ pub async fn start_application() -> Result<()> {
 async fn run<B: ratatui::backend::Backend>(terminal: &mut Terminal<B>, mut app: App) -> Result<()> {
     while app.is_running {
         terminal.draw(|frame| {
-            draw_ui(frame, &app);
+            let _ = draw_ui(frame, &app);
         })?;
 
         match listen_key_events(&mut app) {
             Some(KeyEvents::Quit) => app.is_running = false,
-            Some(KeyEvents::Select) => {
+            Some(KeyEvents::EnterFor("get_logs")) => {
                 if let Some(service) = &app.selected_service {
                     let service_logs =
                         get_logs(service, app.selected_priority.unwrap_or_default()).await?;
@@ -128,7 +128,7 @@ fn listen_key_events(app: &mut App) -> Option<KeyEvents> {
                     app.logs = None;
                 }
 
-                Some(KeyEvents::Select)
+                Some(KeyEvents::EnterFor("get_logs"))
             }
             KeyCode::Char('c') => {
                 if app.is_modal {

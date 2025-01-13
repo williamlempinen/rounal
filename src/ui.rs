@@ -1,9 +1,9 @@
-use crate::journal::get_logs;
+use crate::layouts::center;
 use crate::Result;
 use crate::{app::App, AppError};
 
 use ratatui::style::{Color, Modifier, Style};
-use ratatui::widgets::{List, ListItem};
+use ratatui::widgets::{Clear, List, ListItem};
 use ratatui::{
     layout::{Constraint, Direction, Layout},
     widgets::{Block, Borders, Paragraph},
@@ -75,11 +75,23 @@ pub fn draw_ui(frame: &mut Frame<'_>, app: &App) -> Result<()> {
 
         frame.render_widget(list, chunks[0]);
 
-        // Render the footer
         let footer = Paragraph::new("Press 'q' to quit | '↑/↓' to navigate | 'Enter' to view logs")
             .block(Block::default().borders(Borders::ALL));
         frame.render_widget(footer, chunks[1]);
     }
 
     Ok(())
+}
+
+pub fn render_modal(frame: &mut Frame) {
+    let area = center(
+        frame.area(),
+        Constraint::Percentage(20),
+        Constraint::Length(3),
+    );
+
+    let modal = Paragraph::new("Content").block(Block::bordered().title("Modal"));
+
+    frame.render_widget(Clear, area);
+    frame.render_widget(modal, area);
 }
