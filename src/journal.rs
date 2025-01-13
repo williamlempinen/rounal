@@ -46,7 +46,7 @@ fn parse_log(log_line: &str, p: &u8) -> Option<Log> {
 
     match p {
         1..=7 => {
-            println!("Priority is 4");
+            println!("Priority is {}", p);
             let priority = p.clone();
             let timestamp = parts.get(..3)?.join(" ");
             let hostname = parts.get(3)?.to_string();

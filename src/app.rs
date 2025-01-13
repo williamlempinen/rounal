@@ -12,6 +12,8 @@ use std::io::stdout;
 
 pub struct App {
     pub is_running: bool,
+    pub current_line: usize,
+    pub is_modal: bool,
     pub logs: Arc<RwLock<Vec<String>>>,
     pub services: Arc<RwLock<Vec<ServiceUnits>>>,
     pub selected_service: Option<String>,
@@ -27,6 +29,8 @@ impl App {
     pub fn new() -> Self {
         Self {
             is_running: true,
+            current_line: 0,
+            is_modal: false,
             logs: Arc::new(RwLock::new(Vec::new())),
             services: Arc::new(RwLock::new(Vec::new())),
             selected_service: None,
@@ -35,10 +39,9 @@ impl App {
     }
 
     pub fn set_services(&mut self, services: Vec<ServiceUnits>) -> Result<()> {
-        let mut write_guard = self
-            .services
-            .write()
-            .map_err(|_| AppError::UnexpectedError)?;
+        let mut write_guard = self.services.write().map_err(|e| {
+            AppError::UnexpectedError(format!("Error setting services for app: {}", e))
+        })?;
 
         write_guard.clear();
         write_guard.extend(services);
@@ -73,10 +76,10 @@ pub async fn start_application() -> Result<()> {
 async fn run<B: ratatui::backend::Backend>(terminal: &mut Terminal<B>, mut app: App) -> Result<()> {
     while app.is_running {
         terminal.draw(|frame| {
-            draw_ui(frame, &app);
+            let _ = draw_ui(frame, &app);
         })?;
 
-        match listen_key_events() {
+        match listen_key_events(&mut app) {
             Some(KeyEvents::Quit) => app.is_running = false,
             _ => {}
         }
@@ -84,10 +87,42 @@ async fn run<B: ratatui::backend::Backend>(terminal: &mut Terminal<B>, mut app: 
     Ok(())
 }
 
-fn listen_key_events() -> Option<KeyEvents> {
-    if let Event::Key(key) = event::read().expect("Error reading keys") {
+fn listen_key_events(app: &mut App) -> Option<KeyEvents> {
+    if let Event::Key(key) = event::read().expect("Error keyboard input") {
         match key.code {
             KeyCode::Char('q') => Some(KeyEvents::Quit),
+            KeyCode::Down => {
+                let services_len = app.services.read().unwrap().len();
+
+                if app.current_line < services_len - 1 {
+                    app.current_line += 1;
+                }
+
+                None
+            }
+            KeyCode::Up => {
+                if app.current_line > 0 {
+                    app.current_line -= 1;
+                }
+
+                None
+            }
+            KeyCode::Enter => {
+                let services = app.services.read().unwrap();
+
+                if let Some(service) = services.get(app.current_line) {
+                    app.selected_service = Some(service.name.clone());
+                    app.is_modal = true;
+                }
+                None
+            }
+            KeyCode::Char('c') => {
+                if app.is_modal {
+                    app.is_modal = false;
+                    app.selected_service = None;
+                }
+                None
+            }
             _ => None,
         }
     } else {

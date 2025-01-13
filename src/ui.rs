@@ -1,30 +1,92 @@
-use crate::app::App;
+use crate::journal::get_logs;
+use crate::Result;
+use crate::{app::App, AppError};
+
+use ratatui::style::{Color, Modifier, Style};
+use ratatui::widgets::{List, ListItem};
 use ratatui::{
     layout::{Constraint, Direction, Layout},
     widgets::{Block, Borders, Paragraph},
     Frame,
 };
 
-pub fn draw_ui(frame: &mut Frame, app: &App) {
+// handle the result/error
+pub async fn draw_ui(frame: &mut Frame<'_>, app: &App) -> Result<()> {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
-        .constraints([Constraint::Percentage(90), Constraint::Percentage(10)].as_ref())
+        .constraints([Constraint::Percentage(95), Constraint::Percentage(5)].as_ref())
         .split(frame.area());
 
-    // Convert services to a displayable string
-    let services = app.services.read().unwrap();
-    let content: String = services
-        .iter()
-        .map(|service| format!("{}\n", service.name)) // Assuming ServiceUnits has a `name` field
-        .collect();
+    if app.is_modal {
+        let service_logs = get_logs(
+            app.selected_service
+                .as_ref()
+                .expect("Error getting the selected service"),
+            app.selected_priority.unwrap_or_default(),
+        )
+        .await?;
 
-    // Render the services list
-    let content_widget =
-        Paragraph::new(content).block(Block::default().borders(Borders::ALL).title("Content"));
-    frame.render_widget(content_widget, chunks[0]);
+        let logs: Vec<_> = service_logs
+            .iter()
+            .map(|log| {
+                format!(
+                    "{} {} {} {} \n",
+                    log.timestamp, log.hostname, log.log_message, log.service
+                )
+            })
+            .collect();
 
-    // Render the footer
-    let footer = Paragraph::new("Press 'q' to quit | 'j' for journalctl | 's' for systemctl")
-        .block(Block::default().borders(Borders::ALL));
-    frame.render_widget(footer, chunks[1]);
+        let logs_modal = Paragraph::new(logs.join("\n")).block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title(format!(
+                    "Logs with {} priority",
+                    app.selected_priority.unwrap_or_default()
+                ))
+                .style(Style::default().fg(Color::White)),
+        );
+
+        let modal = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
+            .split(frame.area())[1];
+
+        frame.render_widget(logs_modal, modal);
+    } else {
+        let services = app.services.read().map_err(|e| {
+            AppError::UnexpectedError(format!("Error getting lock for services: {}", e))
+        })?;
+
+        let items: Vec<ListItem> = services
+            .iter()
+            .enumerate()
+            .map(|(i, service)| {
+                let style = if i == app.current_line {
+                    Style::default()
+                        .fg(Color::Yellow)
+                        .add_modifier(Modifier::BOLD)
+                } else {
+                    Style::default()
+                };
+                ListItem::new(service.name.clone()).style(style)
+            })
+            .collect();
+
+        let list = List::new(items)
+            .block(Block::default().borders(Borders::ALL).title("Services"))
+            .highlight_style(
+                Style::default()
+                    .fg(Color::Yellow)
+                    .add_modifier(Modifier::BOLD),
+            );
+
+        frame.render_widget(list, chunks[0]);
+
+        // Render the footer
+        let footer = Paragraph::new("Press 'q' to quit | '↑/↓' to navigate | 'Enter' to view logs")
+            .block(Block::default().borders(Borders::ALL));
+        frame.render_widget(footer, chunks[1]);
+    }
+
+    Ok(())
 }

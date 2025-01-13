@@ -17,5 +17,5 @@ pub enum AppError {
     SystemCtlError(String),
 
     #[error("Unexpected application error")]
-    UnexpectedError,
+    UnexpectedError(String),
 }
