@@ -1,15 +1,19 @@
-use std::sync::{Arc, RwLock};
-
 use crate::journal::{get_logs, Log};
 use crate::system::{get_services, ServiceUnits};
 use crate::ui::draw_ui;
 use crate::{AppError, Result};
+
 use crossterm::event::{self, Event, KeyCode};
-use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
+use crossterm::terminal::{
+    disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
+};
 use crossterm::ExecutableCommand;
-use ratatui::backend::CrosstermBackend;
+
+use ratatui::backend::{Backend, CrosstermBackend};
 use ratatui::Terminal;
+
 use std::io::stdout;
+use std::sync::{Arc, RwLock};
 
 pub struct App {
     pub is_running: bool,
@@ -58,7 +62,7 @@ impl App {
 pub async fn start_application() -> Result<()> {
     let mut stdout = stdout();
     enable_raw_mode()?;
-    stdout.execute(crossterm::terminal::EnterAlternateScreen)?;
+    stdout.execute(EnterAlternateScreen)?;
 
     {
         let backend = CrosstermBackend::new(&mut stdout);
@@ -73,12 +77,12 @@ pub async fn start_application() -> Result<()> {
     }
 
     disable_raw_mode()?;
-    stdout.execute(crossterm::terminal::LeaveAlternateScreen)?;
+    stdout.execute(LeaveAlternateScreen)?;
 
     Ok(())
 }
 
-async fn run<B: ratatui::backend::Backend>(terminal: &mut Terminal<B>, mut app: App) -> Result<()> {
+async fn run<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> Result<()> {
     while app.is_running {
         terminal.draw(|frame| {
             let _ = draw_ui(frame, &app);

@@ -1,6 +1,6 @@
 use std::env;
 
-use rounal::{app::start_application, Result};
+use rounal::{app, Result};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -8,7 +8,7 @@ async fn main() -> Result<()> {
 
     println!("Rounal!");
 
-    if let Err(err) = start_application().await {
+    if let Err(err) = app::start_application().await {
         eprintln!("Error: {}", err);
     }
 
