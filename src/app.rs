@@ -79,7 +79,7 @@ pub async fn start_application() -> Result<()> {
 
         let mut app = App::new();
         let services = get_system_services().await?;
-        app.set_services(services);
+        app.set_services(services)?;
 
         run(&mut terminal, app).await?;
     }
@@ -93,7 +93,7 @@ pub async fn start_application() -> Result<()> {
 async fn run<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> Result<()> {
     while app.is_running {
         terminal.draw(|frame| {
-            draw_ui(frame, &app);
+            let _ = draw_ui(frame, &app);
         })?;
 
         match listen_key_events(&mut app) {

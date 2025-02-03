@@ -1,3 +1,4 @@
+use log::info;
 use tokio::process::Command;
 
 use crate::{AppError, Result};
@@ -237,6 +238,7 @@ pub async fn get_list_unit_files() -> Result<Vec<ServiceUnitFiles>> {
 
 fn parse_service_unit_files(service_line: &str) -> Option<ServiceUnitFiles> {
     let parts: Vec<&str> = service_line.split_whitespace().collect();
+    info!("{:?}", parts);
 
     if parts.len() < 3 {
         println!("Service is missing parts with length of {}", parts.len());
