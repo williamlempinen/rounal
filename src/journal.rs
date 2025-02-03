@@ -1,9 +1,14 @@
-use tokio::process::Command;
+use std::{collections::HashMap, sync::Arc};
+
+use tokio::{
+    process::Command,
+    sync::{mpsc, Mutex},
+};
 
 use crate::{AppError, Result};
 
 #[derive(Debug, Clone)]
-pub struct Log {
+pub struct JournalLog {
     pub priority: u8,
     pub timestamp: String,
     pub log_message: String,
@@ -11,11 +16,48 @@ pub struct Log {
     pub service: String,
 }
 
-pub async fn get_logs(service: &String, priority: u8) -> Result<Vec<Log>> {
+pub type Priority = u8;
+pub type JournalLogMap = HashMap<Priority, Vec<JournalLog>>;
+pub type SharedJournalLogs = Arc<Mutex<JournalLogMap>>;
+
+pub async fn get_journal_logs(service: &str) -> Result<SharedJournalLogs> {
+    let logs_for_service = Arc::new(Mutex::new(HashMap::new()));
+    let (sender, mut receiver) = mpsc::channel(7);
+
+    for p in 1..=7 {
+        let cloned_logs = logs_for_service.clone();
+        let cloned_service = service.to_string();
+        let cloned_sender = sender.clone();
+
+        tokio::task::spawn(async move {
+            log::info!("Spawned");
+
+            let logs = get_logs(cloned_service, p)
+                .await
+                .expect("Error getting logs for: {service} with priority: {p}");
+
+            cloned_logs.lock().await.insert(p, logs);
+            log::info!("Done");
+            cloned_sender.send(()).await.unwrap();
+        });
+    }
+
+    for _ in 0..=7 {
+        receiver.recv().await.ok_or(AppError::UnexpectedError(
+            "Error receiving logs".to_string(),
+        ))?;
+    }
+
+    log::info!("Logs: {:?}", logs_for_service);
+
+    Ok(logs_for_service)
+}
+
+async fn get_logs(service: String, priority: u8) -> Result<Vec<JournalLog>> {
     let out = Command::new("sudo")
         .arg("journalctl")
         .arg("-u")
-        .arg(service)
+        .arg(&service)
         .arg("-r")
         .arg("-p")
         .arg(priority.to_string())
@@ -32,7 +74,7 @@ pub async fn get_logs(service: &String, priority: u8) -> Result<Vec<Log>> {
 
     let stdout = String::from_utf8_lossy(&out.stdout);
 
-    let logs: Vec<Log> = stdout
+    let logs: Vec<JournalLog> = stdout
         .lines()
         .skip(1)
         .filter_map(|line| parse_log(line, &priority))
@@ -41,7 +83,7 @@ pub async fn get_logs(service: &String, priority: u8) -> Result<Vec<Log>> {
     Ok(logs)
 }
 
-fn parse_log(log_line: &str, p: &u8) -> Option<Log> {
+fn parse_log(log_line: &str, p: &u8) -> Option<JournalLog> {
     let parts: Vec<&str> = log_line.split_whitespace().collect();
 
     match p {
@@ -52,7 +94,7 @@ fn parse_log(log_line: &str, p: &u8) -> Option<Log> {
             let hostname = parts.get(3)?.to_string();
             let service = parts.get(4)?.trim_end_matches(":").to_string();
             let log_message = parts.get(5..)?.join(" ").to_string();
-            return Some(Log {
+            return Some(JournalLog {
                 priority,
                 timestamp,
                 log_message,

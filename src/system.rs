@@ -1,5 +1,3 @@
-use std::sync::{Arc, RwLock};
-
 use tokio::process::Command;
 
 use crate::{AppError, Result};
@@ -135,10 +133,7 @@ pub struct ServiceUnitFiles {
     pub preset: Preset,
 }
 
-pub type SharedServiceUnits = Arc<RwLock<ServiceUnits>>;
-pub type SharedServiceUnitFiles = Arc<RwLock<ServiceUnitFiles>>;
-
-pub async fn get_services() -> Result<(Vec<ServiceUnits>, Vec<ServiceUnitFiles>)> {
+pub async fn get_system_services() -> Result<(Vec<ServiceUnits>, Vec<ServiceUnitFiles>)> {
     let units = tokio::spawn(get_list_units());
     let unit_files = tokio::spawn(get_list_unit_files());
 
