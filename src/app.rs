@@ -1,4 +1,4 @@
-use crate::journal::{get_journal_logs, JournalLog, JournalLogMap, SharedJournalLogs};
+use crate::journal::{get_journal_logs, JournalLogMap, SharedJournalLogs};
 use crate::system::{get_system_services, ServiceUnitFiles, ServiceUnits};
 use crate::ui::draw_ui;
 use crate::{AppError, Result};
@@ -11,10 +11,17 @@ use crossterm::ExecutableCommand;
 
 use ratatui::backend::{Backend, CrosstermBackend};
 use ratatui::Terminal;
+
 use tokio::sync::Mutex;
 
 use std::io::stdout;
 use std::sync::Arc;
+
+#[derive(PartialEq)]
+pub enum ServiceView {
+    Units,
+    UnitFiles,
+}
 
 pub struct App {
     pub is_running: bool,
@@ -24,8 +31,10 @@ pub struct App {
     pub services: Option<(Vec<ServiceUnits>, Vec<ServiceUnitFiles>)>,
     pub selected_service: Option<String>,
     pub selected_priority: Option<u8>,
+    pub selected_service_view: ServiceView,
 }
 
+#[derive(PartialEq)]
 pub enum KeyEvents<'a> {
     Quit,
     EnterFor(&'a str),
@@ -40,23 +49,21 @@ impl App {
             logs: None,
             services: None,
             selected_service: None,
-            selected_priority: Some(4), // default priority to 3 / errors
+            selected_priority: Some(4), // default priority level
+            selected_service_view: ServiceView::Units,
         }
     }
 
-    pub fn set_services(
-        &mut self,
-        services: (Vec<ServiceUnits>, Vec<ServiceUnitFiles>),
-    ) -> Result<()> {
+    fn set_services(&mut self, services: (Vec<ServiceUnits>, Vec<ServiceUnitFiles>)) -> Result<()> {
         self.services = Some(services);
         Ok(())
     }
 
-    pub fn set_logs(&mut self, logs: Arc<Mutex<JournalLogMap>>) {
+    fn set_logs(&mut self, logs: Arc<Mutex<JournalLogMap>>) {
         self.logs = Some(logs);
     }
 
-    pub fn clear_logs(&mut self) {
+    fn clear_logs(&mut self) {
         self.logs = None;
     }
 }
@@ -86,7 +93,7 @@ pub async fn start_application() -> Result<()> {
 async fn run<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> Result<()> {
     while app.is_running {
         terminal.draw(|frame| {
-            let _ = draw_ui(frame, &app);
+            draw_ui(frame, &app);
         })?;
 
         match listen_key_events(&mut app) {
@@ -108,7 +115,16 @@ fn listen_key_events(app: &mut App) -> Option<KeyEvents> {
         match key.code {
             KeyCode::Char('q') => Some(KeyEvents::Quit),
             KeyCode::Down => {
-                let services_len = app.services.read().unwrap().len();
+                let services_len = match &app.services {
+                    Some((u, f)) => {
+                        if app.selected_service_view == ServiceView::Units {
+                            u.len()
+                        } else {
+                            f.len()
+                        }
+                    }
+                    None => 0,
+                };
 
                 if app.current_line < services_len - 1 {
                     app.current_line += 1;
@@ -124,22 +140,36 @@ fn listen_key_events(app: &mut App) -> Option<KeyEvents> {
                 None
             }
             KeyCode::Enter => {
-                let services = app.services.read().expect("Could not read services");
-
-                if let Some(service) = services.get(app.current_line) {
-                    app.selected_service = Some(service.name.clone());
-                    app.is_modal = true;
-                    app.logs = None;
+                if let Some((u, f)) = &app.services {
+                    match app.selected_service_view {
+                        ServiceView::Units => {
+                            if let Some(service) = u.get(app.current_line) {
+                                app.selected_service = Some(service.name.clone());
+                                app.is_modal = true;
+                            }
+                        }
+                        ServiceView::UnitFiles => {
+                            if let Some(service) = f.get(app.current_line) {
+                                app.selected_service = Some(service.name.clone());
+                                app.is_modal = true;
+                            }
+                        }
+                    }
+                    Some(KeyEvents::EnterFor("get_logs"))
+                } else {
+                    None
                 }
-
-                Some(KeyEvents::EnterFor("get_logs"))
+            }
+            KeyCode::Char(c) if ('1'..='7').contains(&c) => {
+                app.selected_priority = Some(c.to_digit(10).unwrap() as u8);
+                None
             }
             KeyCode::Char('c') => {
                 if app.is_modal {
                     app.is_modal = false;
                     app.selected_service = None;
+                    app.clear_logs();
                 }
-
                 None
             }
             _ => None,

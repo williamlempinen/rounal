@@ -42,7 +42,7 @@ pub async fn get_journal_logs(service: &str) -> Result<SharedJournalLogs> {
         });
     }
 
-    for _ in 0..=7 {
+    for _ in 1..=7 {
         receiver.recv().await.ok_or(AppError::UnexpectedError(
             "Error receiving logs".to_string(),
         ))?;
