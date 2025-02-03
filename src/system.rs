@@ -186,8 +186,8 @@ fn parse_service_units(service_line: &str) -> Option<ServiceUnits> {
     let parts: Vec<&str> = service_line.split_whitespace().collect();
 
     if parts.len() < 4 {
-        println!("Service is missing parts with length of {}", parts.len());
-        println!("{:?}", parts);
+        info!("Service is missing parts with length of {}", parts.len());
+        info!("{:?}", parts);
         return None;
     }
 
@@ -241,8 +241,8 @@ fn parse_service_unit_files(service_line: &str) -> Option<ServiceUnitFiles> {
     info!("{:?}", parts);
 
     if parts.len() < 3 {
-        println!("Service is missing parts with length of {}", parts.len());
-        println!("{:?}", parts);
+        info!("Service is missing parts with length of {}", parts.len());
+        info!("{:?}", parts);
         return None;
     }
 

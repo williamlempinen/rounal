@@ -1,6 +1,6 @@
 use std::env;
 
-use log::{info, LevelFilter};
+use log::{error, info, LevelFilter};
 use rounal::{app, Result};
 use simple_logging::*;
 
@@ -14,7 +14,7 @@ async fn main() -> Result<()> {
     info!("Rounal STARTING");
 
     if let Err(err) = app::start_application().await {
-        eprintln!("Error: {}", err);
+        error!("Error: {}", err);
     }
 
     info!("Rounal ENDED");
