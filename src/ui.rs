@@ -10,8 +10,8 @@ use ratatui::{
 };
 
 // handle the result/error
-pub async fn draw_ui(frame: &mut Frame<'_>, app: &App) -> Result<()> {
-    info!("DRAW_UI");
+pub fn draw_ui(frame: &mut Frame<'_>, app: &App) -> Result<()> {
+    info!("ENTER DRAW_UI");
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([Constraint::Percentage(95), Constraint::Percentage(5)].as_ref())
