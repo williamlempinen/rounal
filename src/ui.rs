@@ -1,6 +1,7 @@
 use crate::app::{App, ServiceView};
 use crate::layouts::center;
 use crate::Result;
+use log::{info, warn};
 use ratatui::{
     layout::{Constraint, Direction, Layout},
     style::{Color, Modifier, Style},
@@ -10,16 +11,20 @@ use ratatui::{
 
 // handle the result/error
 pub async fn draw_ui(frame: &mut Frame<'_>, app: &App) -> Result<()> {
+    info!("DRAW_UI");
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([Constraint::Percentage(95), Constraint::Percentage(5)].as_ref())
         .split(frame.area());
 
+    warn!("-- APP-- {:?}", app);
+
     if app.is_modal {
+        info!("DRAW_UI -> is modal");
         let logs_display = if let Some(logs_arc) = app.logs.as_ref() {
-            let logs_map = logs_arc.lock().await;
+            let logs_map = logs_arc.lock().unwrap();
             logs_map
-                .get(&app.selected_priority.unwrap_or(3))
+                .get(&app.selected_priority.unwrap_or_default())
                 .map(|logs| {
                     logs.iter()
                         .map(|log| {
@@ -50,6 +55,7 @@ pub async fn draw_ui(frame: &mut Frame<'_>, app: &App) -> Result<()> {
 
         frame.render_widget(modal_content, modal);
     } else {
+        info!("DRAW_UI -> no modal");
         let services: Vec<String> = match &app.services {
             Some((units, unit_files)) => {
                 if app.selected_service_view == ServiceView::Units {
@@ -87,10 +93,13 @@ pub async fn draw_ui(frame: &mut Frame<'_>, app: &App) -> Result<()> {
         frame.render_widget(list, chunks[0]);
     }
 
+    info!("NO IF OR ELSE BRANCH");
+
     Ok(())
 }
 
 pub fn render_modal(frame: &mut Frame) {
+    info!("render modal fn");
     let area = center(
         frame.area(),
         Constraint::Percentage(20),

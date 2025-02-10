@@ -238,7 +238,7 @@ pub async fn get_list_unit_files() -> Result<Vec<ServiceUnitFiles>> {
 
 fn parse_service_unit_files(service_line: &str) -> Option<ServiceUnitFiles> {
     let parts: Vec<&str> = service_line.split_whitespace().collect();
-    info!("{:?}", parts);
+    //info!("{:?}", parts);
 
     if parts.len() < 3 {
         info!("Service is missing parts with length of {}", parts.len());

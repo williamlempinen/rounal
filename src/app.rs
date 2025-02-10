@@ -9,20 +9,26 @@ use crossterm::terminal::{
 };
 use crossterm::ExecutableCommand;
 
+use log::{error, info};
 use ratatui::backend::{Backend, CrosstermBackend};
 use ratatui::Terminal;
 
-use tokio::sync::Mutex;
-
 use std::io::stdout;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Debug)]
 pub enum ServiceView {
     Units,
     UnitFiles,
 }
 
+#[derive(PartialEq)]
+pub enum KeyEvents<'a> {
+    Quit,
+    EnterFor(&'a str),
+}
+
+#[derive(Debug)]
 pub struct App {
     pub is_running: bool,
     pub current_line: usize,
@@ -32,12 +38,6 @@ pub struct App {
     pub selected_service: Option<String>,
     pub selected_priority: Option<u8>,
     pub selected_service_view: ServiceView,
-}
-
-#[derive(PartialEq)]
-pub enum KeyEvents<'a> {
-    Quit,
-    EnterFor(&'a str),
 }
 
 impl App {
@@ -79,8 +79,11 @@ pub async fn start_application() -> Result<()> {
 
         let mut app = App::new();
         let services = get_system_services().await?;
+        info!("GOT SERVICES");
         app.set_services(services)?;
+        info!("SET SERVICES");
 
+        info!("CALL RUN");
         run(&mut terminal, app).await?;
     }
 
@@ -100,11 +103,15 @@ async fn run<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> Result<()>
             Some(KeyEvents::Quit) => app.is_running = false,
             Some(KeyEvents::EnterFor("get_logs")) => {
                 if let Some(service) = &app.selected_service {
+                    info!("start getting journals");
                     let all_logs_for_service = get_journal_logs(service).await?;
                     app.set_logs(all_logs_for_service);
+                    info!("journals set to app");
                 }
             }
-            _ => {}
+            _ => {
+                info!("nothing for key events");
+            }
         }
     }
     Ok(())
@@ -125,31 +132,32 @@ fn listen_key_events(app: &mut App) -> Option<KeyEvents> {
                     }
                     None => 0,
                 };
-
                 if app.current_line < services_len - 1 {
                     app.current_line += 1;
                 }
-
                 None
             }
             KeyCode::Up => {
                 if app.current_line > 0 {
                     app.current_line -= 1;
                 }
-
                 None
             }
             KeyCode::Enter => {
                 if let Some((u, f)) = &app.services {
                     match app.selected_service_view {
                         ServiceView::Units => {
+                            info!("HIT ENTER FOR UNITS");
                             if let Some(service) = u.get(app.current_line) {
+                                info!("SELECTED SERVICE NOW {:?}", service);
                                 app.selected_service = Some(service.name.clone());
                                 app.is_modal = true;
                             }
                         }
                         ServiceView::UnitFiles => {
+                            info!("HIT ENTER FOR UNITSFILES");
                             if let Some(service) = f.get(app.current_line) {
+                                info!("SELECTED SERVICE NOW {:?}", service);
                                 app.selected_service = Some(service.name.clone());
                                 app.is_modal = true;
                             }
@@ -160,15 +168,18 @@ fn listen_key_events(app: &mut App) -> Option<KeyEvents> {
                     None
                 }
             }
-            KeyCode::Char(c) if ('1'..='7').contains(&c) => {
-                app.selected_priority = Some(c.to_digit(10).unwrap() as u8);
-                None
-            }
             KeyCode::Char('c') => {
                 if app.is_modal {
                     app.is_modal = false;
                     app.selected_service = None;
                     app.clear_logs();
+                }
+                None
+            }
+            KeyCode::Char(key) => {
+                if ('1'..='7').contains(&key) {
+                    app.selected_priority = Some(key.to_digit(10).unwrap() as u8);
+                    return None;
                 }
                 None
             }

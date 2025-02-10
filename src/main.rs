@@ -14,7 +14,7 @@ async fn main() -> Result<()> {
     info!("Rounal STARTING");
 
     if let Err(err) = app::start_application().await {
-        error!("Error: {}", err);
+        error!("Rounal application error: {}", err);
     }
 
     info!("Rounal ENDED");

@@ -1,10 +1,10 @@
 use log::info;
-use std::{collections::HashMap, sync::Arc};
-
-use tokio::{
-    process::Command,
-    sync::{mpsc, Mutex},
+use std::{
+    collections::HashMap,
+    sync::{Arc, Mutex},
 };
+
+use tokio::{process::Command, sync::mpsc};
 
 use crate::{AppError, Result};
 
@@ -24,37 +24,41 @@ pub type SharedJournalLogs = Arc<Mutex<JournalLogMap>>;
 pub async fn get_journal_logs(service: &str) -> Result<SharedJournalLogs> {
     let logs_for_service = Arc::new(Mutex::new(HashMap::new()));
     let (sender, mut receiver) = mpsc::channel(7);
+    info!("get_journal_logs called");
 
     for p in 1..=7 {
-        let cloned_logs = logs_for_service.clone();
-        let cloned_service = service.to_string();
-        let cloned_sender = sender.clone();
+        info!("get_journal_logs called, in for loop");
+        let thread_logs = logs_for_service.clone();
+        let thread_service = service.to_string();
+        let thread_sender = sender.clone();
 
         tokio::task::spawn(async move {
-            log::info!("Spawned");
+            info!("Spawned with {}", p);
 
-            let logs = get_logs(cloned_service, p)
+            let logs = get_logs(thread_service, p)
                 .await
                 .expect("Error getting logs for: {service} with priority: {p}");
 
-            cloned_logs.lock().await.insert(p, logs);
+            thread_logs.lock().unwrap().insert(p, logs);
             log::info!("Done");
-            cloned_sender.send(()).await.unwrap();
+            thread_sender.send(()).await.unwrap();
         });
     }
 
-    for _ in 1..=7 {
+    for x in 1..=7 {
+        info!("Receiver with {}", x);
         receiver.recv().await.ok_or(AppError::UnexpectedError(
             "Error receiving logs".to_string(),
         ))?;
     }
 
-    log::info!("Logs: {:?}", logs_for_service);
+    info!("Logs: {:?}", logs_for_service);
 
     Ok(logs_for_service)
 }
 
 async fn get_logs(service: String, priority: u8) -> Result<Vec<JournalLog>> {
+    info!("get_logs with {} {}", service, priority);
     let out = Command::new("sudo")
         .arg("journalctl")
         .arg("-u")
