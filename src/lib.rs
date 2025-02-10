@@ -6,4 +6,4 @@ pub mod system;
 pub mod ui;
 pub mod util;
 
-pub use error::{AppError, Result};
+pub use error::{RounalError, Result};

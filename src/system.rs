@@ -1,7 +1,7 @@
 use log::info;
 use tokio::process::Command;
 
-use crate::{AppError, Result};
+use crate::{RounalError, Result};
 
 #[derive(Debug, Clone)]
 pub enum State {
@@ -140,10 +140,10 @@ pub async fn get_system_services() -> Result<(Vec<ServiceUnits>, Vec<ServiceUnit
 
     let units = units
         .await
-        .map_err(|e| AppError::SystemCtlError(format!("Failed to spawn units task: {}", e)))??;
+        .map_err(|e| RounalError::SystemCtlError(format!("Failed to spawn units task: {}", e)))??;
 
     let unit_files = unit_files.await.map_err(|e| {
-        AppError::SystemCtlError(format!("Failed to spawn unit files task: {}", e))
+        RounalError::SystemCtlError(format!("Failed to spawn unit files task: {}", e))
     })??;
 
     Ok((units, unit_files))
@@ -158,7 +158,7 @@ pub async fn get_list_units() -> Result<Vec<ServiceUnits>> {
         .await?;
 
     if !out.status.success() {
-        return Err(AppError::SystemCtlError(format!(
+        return Err(RounalError::SystemCtlError(format!(
             "{}",
             String::from_utf8_lossy(&out.stderr).to_string()
         )));
@@ -219,7 +219,7 @@ pub async fn get_list_unit_files() -> Result<Vec<ServiceUnitFiles>> {
         .await?;
 
     if !out.status.success() {
-        return Err(AppError::SystemCtlError(format!(
+        return Err(RounalError::SystemCtlError(format!(
             "{}",
             String::from_utf8_lossy(&out.stderr).to_string()
         )));

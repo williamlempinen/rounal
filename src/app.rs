@@ -1,7 +1,7 @@
 use crate::journal::{get_journal_logs, JournalLogMap, SharedJournalLogs};
 use crate::system::{get_system_services, ServiceUnitFiles, ServiceUnits};
 use crate::ui::draw_ui;
-use crate::{AppError, Result};
+use crate::{RounalError, Result};
 
 use crossterm::event::{self, Event, KeyCode};
 use crossterm::terminal::{
@@ -75,7 +75,7 @@ pub async fn start_application() -> Result<()> {
 
     {
         let backend = CrosstermBackend::new(&mut stdout);
-        let mut terminal = Terminal::new(backend).map_err(AppError::TerminalError)?;
+        let mut terminal = Terminal::new(backend).map_err(RounalError::TerminalError)?;
 
         let mut app = App::new();
         let services = get_system_services().await?;

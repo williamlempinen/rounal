@@ -6,7 +6,7 @@ use std::{
 
 use tokio::{process::Command, sync::mpsc};
 
-use crate::{AppError, Result};
+use crate::{RounalError, Result};
 
 #[derive(Debug, Clone)]
 pub struct JournalLog {
@@ -47,7 +47,7 @@ pub async fn get_journal_logs(service: &str) -> Result<SharedJournalLogs> {
 
     for x in 1..=7 {
         info!("Receiver with {}", x);
-        receiver.recv().await.ok_or(AppError::UnexpectedError(
+        receiver.recv().await.ok_or(RounalError::UnexpectedError(
             "Error receiving logs".to_string(),
         ))?;
     }
@@ -70,7 +70,7 @@ async fn get_logs(service: String, priority: u8) -> Result<Vec<JournalLog>> {
         .await?;
 
     if !out.status.success() {
-        return Err(AppError::JournalCtlError(format!(
+        return Err(RounalError::JournalCtlError(format!(
             "{}, {}",
             service.to_string(),
             String::from_utf8_lossy(&out.stderr).to_string()

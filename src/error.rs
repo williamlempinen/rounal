@@ -1,9 +1,9 @@
 use thiserror::Error;
 
-pub type Result<T> = std::result::Result<T, AppError>;
+pub type Result<T> = std::result::Result<T, RounalError>;
 
 #[derive(Error, Debug)]
-pub enum AppError {
+pub enum RounalError {
     #[error("Failed to initialize terminal")]
     TerminalError(#[from] std::io::Error),
 
