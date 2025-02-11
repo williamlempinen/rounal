@@ -14,8 +14,15 @@ pub fn draw_ui(frame: &mut Frame<'_>, app: &App) -> Result<()> {
     info!("ENTER DRAW_UI");
     let chunks = Layout::default()
         .direction(Direction::Vertical)
-        .constraints([Constraint::Percentage(95), Constraint::Percentage(5)].as_ref())
+        .constraints([Constraint::Percentage(100), Constraint::Percentage(0)].as_ref())
         .split(frame.area());
+
+    let display_lines = chunks.get(0).unwrap().height as usize;
+    let scroll_offset = if app.current_line >= display_lines - 2 {
+        app.current_line - (display_lines - 3)
+    } else {
+        0
+    };
 
     warn!("-- APP-- {:?}", app);
 
@@ -70,10 +77,12 @@ pub fn draw_ui(frame: &mut Frame<'_>, app: &App) -> Result<()> {
         let items: Vec<ListItem> = services
             .iter()
             .enumerate()
+            .skip(scroll_offset)
+            .take(display_lines)
             .map(|(i, service_name)| {
                 let style = if i == app.current_line {
                     Style::default()
-                        .fg(Color::Yellow)
+                        .fg(Color::Blue)
                         .add_modifier(Modifier::BOLD)
                 } else {
                     Style::default()
@@ -92,8 +101,6 @@ pub fn draw_ui(frame: &mut Frame<'_>, app: &App) -> Result<()> {
 
         frame.render_widget(list, chunks[0]);
     }
-
-    info!("NO IF OR ELSE BRANCH");
 
     Ok(())
 }

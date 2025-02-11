@@ -1,7 +1,7 @@
 use crate::journal::{get_journal_logs, JournalLogMap, SharedJournalLogs};
 use crate::system::{get_system_services, ServiceUnitFiles, ServiceUnits};
 use crate::ui::draw_ui;
-use crate::{RounalError, Result};
+use crate::{Result, RounalError};
 
 use crossterm::event::{self, Event, KeyCode};
 use crossterm::terminal::{
@@ -57,6 +57,12 @@ impl App {
     fn set_services(&mut self, services: (Vec<ServiceUnits>, Vec<ServiceUnitFiles>)) -> Result<()> {
         self.services = Some(services);
         Ok(())
+    }
+
+    fn set_init(&mut self) {
+        self.selected_priority = Some(4);
+        self.is_modal = false;
+        self.clear_logs();
     }
 
     fn set_logs(&mut self, logs: Arc<Mutex<JournalLogMap>>) {
@@ -120,8 +126,8 @@ async fn run<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> Result<()>
 fn listen_key_events(app: &mut App) -> Option<KeyEvents> {
     if let Event::Key(key) = event::read().expect("Error keyboard input") {
         match key.code {
-            KeyCode::Char('q') => Some(KeyEvents::Quit),
-            KeyCode::Down => {
+            KeyCode::Esc | KeyCode::Char('q') => Some(KeyEvents::Quit),
+            KeyCode::Down | KeyCode::Char('j') => {
                 let services_len = match &app.services {
                     Some((u, f)) => {
                         if app.selected_service_view == ServiceView::Units {
@@ -137,7 +143,7 @@ fn listen_key_events(app: &mut App) -> Option<KeyEvents> {
                 }
                 None
             }
-            KeyCode::Up => {
+            KeyCode::Up | KeyCode::Char('k') => {
                 if app.current_line > 0 {
                     app.current_line -= 1;
                 }
@@ -168,11 +174,13 @@ fn listen_key_events(app: &mut App) -> Option<KeyEvents> {
                     None
                 }
             }
+            KeyCode::Char('y') => {
+                info!("wants to yank this");
+                None
+            }
             KeyCode::Char('c') => {
                 if app.is_modal {
-                    app.is_modal = false;
-                    app.selected_service = None;
-                    app.clear_logs();
+                    app.set_init();
                 }
                 None
             }
