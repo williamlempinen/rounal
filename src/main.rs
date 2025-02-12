@@ -3,6 +3,8 @@ mod ui;
 
 use std::env;
 
+use rounal::app;
+
 use log::{error, info, LevelFilter};
 
 use simple_logging::*;
@@ -16,7 +18,7 @@ async fn main() -> core::error::Result<()> {
 
     info!("Rounal STARTING");
 
-    if let Err(err) = core::app::start_application().await {
+    if let Err(err) = app::start_application().await {
         error!("Rounal application error: {}", err);
     }
 

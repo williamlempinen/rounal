@@ -1,5 +1,6 @@
-use crate::core::app::{App, ServiceView};
 use crate::core::error::Result;
+
+use crate::app::{App, ServiceView};
 
 use log::info;
 
@@ -12,6 +13,23 @@ use ratatui::{
     },
     Frame,
 };
+
+#[derive(Debug)]
+pub enum View {
+    ServiceUnits,
+    ServiceUnitFiles,
+    Logs,
+}
+
+#[derive(Debug)]
+pub struct UI {
+    pub view: View,
+    pub is_looking_help: bool,
+    pub vertical_scroll_state: ScrollbarState,
+    pub horizontal_scroll_state: ScrollbarState,
+    pub verical_scroll: usize,
+    pub horizontal_scroll: usize,
+}
 
 const GLOBAL_MARGIN: u16 = 1;
 
@@ -116,10 +134,18 @@ pub fn draw_ui(frame: &mut Frame<'_>, app: &App) -> Result<()> {
                 vec![
                     ListItem::new("No logs available").style(get_priority_color(&0)),
                     ListItem::new("No logs available").style(get_priority_color(&0)),
+                    ListItem::new("No logs available").style(get_priority_color(&0)),
+                    ListItem::new("No logs available").style(get_priority_color(&0)),
+                    ListItem::new("No logs available").style(get_priority_color(&0)),
+                    ListItem::new("No logs available").style(get_priority_color(&0)),
                 ]
             }
         } else {
             vec![
+                ListItem::new("No logs available").style(get_priority_color(&0)),
+                ListItem::new("No logs available").style(get_priority_color(&0)),
+                ListItem::new("No logs available").style(get_priority_color(&0)),
+                ListItem::new("No logs available").style(get_priority_color(&0)),
                 ListItem::new("No logs available").style(get_priority_color(&0)),
                 ListItem::new("No logs available").style(get_priority_color(&0)),
             ]

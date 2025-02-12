@@ -74,6 +74,10 @@ impl App {
         self.clear_logs();
     }
 
+    fn set_priority(&mut self, priority: u8) {
+        self.selected_priority = Some(priority);
+    }
+
     fn set_services(&mut self, services: (Vec<ServiceUnits>, Vec<ServiceUnitFiles>)) -> Result<()> {
         self.services = Some(services);
         Ok(())
@@ -125,6 +129,8 @@ async fn run<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> Result<()>
     while app.is_running {
         terminal.draw(|frame| {
             draw_ui(frame, &app).ok();
+
+            // if is looking help -> draw help modal
         })?;
 
         match listen_key_events(&mut app) {
@@ -189,22 +195,32 @@ fn listen_key_events(app: &mut App) -> Option<KeyEvents> {
             }
             KeyCode::Right | KeyCode::Char('h') => {
                 if !app.is_in_logs {
-                    if app.selected_service_view == ServiceView::UnitFiles {
-                        info!("Change view to units");
-                        app.set_init();
-                        app.set_view(ServiceView::Units);
-                        return None;
+                    match app.selected_service_view {
+                        ServiceView::UnitFiles => app.set_view(ServiceView::Units),
+                        _ => {}
+                    }
+                } else {
+                    if let Some(p) = app.selected_priority {
+                        if p < 7 {
+                            app.set_priority(p + 1);
+                            app.set_current_line(0);
+                        }
                     }
                 }
                 None
             }
             KeyCode::Left | KeyCode::Char('l') => {
                 if !app.is_in_logs {
-                    if app.selected_service_view == ServiceView::Units {
-                        info!("Change view to unitfiles");
-                        app.set_init();
-                        app.set_view(ServiceView::UnitFiles);
-                        return None;
+                    match app.selected_service_view {
+                        ServiceView::Units => app.set_view(ServiceView::UnitFiles),
+                        _ => {}
+                    }
+                } else {
+                    if let Some(p) = app.selected_priority {
+                        if p > 1 {
+                            app.set_priority(p - 1);
+                            app.set_current_line(0);
+                        }
                     }
                 }
                 None
