@@ -9,7 +9,7 @@ use crossterm::terminal::{
 };
 use crossterm::ExecutableCommand;
 
-use log::{error, info};
+use log::info;
 use ratatui::backend::{Backend, CrosstermBackend};
 use ratatui::Terminal;
 
@@ -22,6 +22,7 @@ pub enum ServiceView {
     UnitFiles,
 }
 
+// todo
 #[derive(PartialEq)]
 pub enum KeyEvents<'a> {
     Quit,
@@ -40,6 +41,7 @@ pub struct App {
     pub selected_service_view: ServiceView,
 }
 
+// should impl default trait
 impl App {
     pub fn new() -> Self {
         Self {
@@ -102,7 +104,7 @@ pub async fn start_application() -> Result<()> {
 async fn run<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> Result<()> {
     while app.is_running {
         terminal.draw(|frame| {
-            let _ = draw_ui(frame, &app);
+            draw_ui(frame, &app).ok();
         })?;
 
         match listen_key_events(&mut app) {
