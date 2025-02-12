@@ -31,6 +31,12 @@ pub enum KeyEvents<'a> {
     EnterFor(&'a str),
 }
 
+// TODO:
+//      - vim-like search
+//      - filtering based on status (failed | running | exited)
+//      - read custom configs
+//      - refactor
+
 #[derive(Debug)]
 pub struct App {
     pub is_running: bool,
@@ -231,10 +237,12 @@ fn listen_key_events(app: &mut App) -> Option<KeyEvents> {
                 None
             }
             KeyCode::Char(key) => {
-                if ('1'..='7').contains(&key) {
-                    app.set_current_line(0);
-                    app.selected_priority = Some(key.to_digit(10).unwrap() as u8);
-                    return None;
+                if app.is_in_logs {
+                    if ('1'..='7').contains(&key) {
+                        app.set_current_line(0);
+                        app.selected_priority = Some(key.to_digit(10).unwrap() as u8);
+                        return None;
+                    }
                 }
                 None
             }

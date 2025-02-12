@@ -4,7 +4,7 @@ use crate::Result;
 use log::info;
 
 use ratatui::layout::{Alignment, Rect};
-use ratatui::widgets::Widget;
+use ratatui::widgets::{Paragraph, Widget};
 use ratatui::{
     layout::{Constraint, Direction, Layout},
     style::{Color, Modifier, Style},
@@ -74,11 +74,15 @@ pub fn draw_ui(frame: &mut Frame<'_>, app: &App) -> Result<()> {
     let terminal_layout = Layout::default()
         .margin(GLOBAL_MARGIN)
         .direction(Direction::Vertical)
-        .constraints(&[Constraint::Min(0)])
+        .constraints(&[Constraint::Percentage(95), Constraint::Percentage(5)])
         .split(frame.area());
-    let terminal = terminal_layout
+    let content_area = terminal_layout
         .get(0)
         .expect("Error getting terminal layout")
+        .clone();
+    let instructions = terminal_layout
+        .get(1)
+        .expect("Error getting instructions")
         .clone();
 
     let display_lines = frame.area().height.saturating_sub(2) as usize;
@@ -108,10 +112,16 @@ pub fn draw_ui(frame: &mut Frame<'_>, app: &App) -> Result<()> {
                     })
                     .collect()
             } else {
-                vec![ListItem::new("No logs available").style(get_priority_color(&0))]
+                vec![
+                    ListItem::new("No logs available").style(get_priority_color(&0)),
+                    ListItem::new("No logs available").style(get_priority_color(&0)),
+                ]
             }
         } else {
-            vec![ListItem::new("No logs available").style(get_priority_color(&0))]
+            vec![
+                ListItem::new("No logs available").style(get_priority_color(&0)),
+                ListItem::new("No logs available").style(get_priority_color(&0)),
+            ]
         };
 
         let logs_list = List::new(logs_items)
@@ -123,7 +133,7 @@ pub fn draw_ui(frame: &mut Frame<'_>, app: &App) -> Result<()> {
             )
             .style(get_priority_color(&0));
 
-        render_after_clear(frame, terminal, logs_list);
+        render_after_clear(frame, content_area, logs_list);
     } else {
         let services: Vec<String> = match &app.services {
             Some((units, unit_files)) => {
@@ -158,8 +168,17 @@ pub fn draw_ui(frame: &mut Frame<'_>, app: &App) -> Result<()> {
                     .add_modifier(Modifier::BOLD),
             );
 
-        render_after_clear(frame, terminal, list);
+        render_after_clear(frame, content_area, list);
     }
+
+    let i_txt =
+        "Move-[hjkl/arrows] | Select-[Enter] | Close logs-[c] | Change priority-[1-7] | Quit-[q/Esc]";
+    let i = Paragraph::new(i_txt)
+        .block(Block::bordered().title("Help"))
+        .alignment(Alignment::Center)
+        .style(Style::default().fg(Color::White));
+
+    render_after_clear(frame, instructions, i);
 
     Ok(())
 }
