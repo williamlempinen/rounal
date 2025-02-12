@@ -34,17 +34,19 @@ pub enum KeyEvents<'a> {
 }
 
 // TODO:
+//      - scrollbar
+//      - yanking
 //      - vim-like search
 //      - filtering based on status (failed | running | exited)
 //      - read custom configs
-//      - scrollbar
-//      - yanking
+//      - error handling
+//      - catch sudo
 
 #[derive(Debug)]
 pub struct App {
     pub is_running: bool,
-    pub current_line: usize,
     pub is_in_logs: bool,
+    pub current_line: usize,
     pub logs: Option<SharedJournalLogs>,
     pub services: Option<(Vec<ServiceUnits>, Vec<ServiceUnitFiles>)>,
     pub selected_service: Option<String>,
@@ -56,8 +58,8 @@ impl App {
     pub fn new() -> Self {
         Self {
             is_running: true,
-            current_line: 0,
             is_in_logs: false,
+            current_line: 0,
             logs: None,
             services: None,
             selected_service: None,

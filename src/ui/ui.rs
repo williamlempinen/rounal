@@ -3,12 +3,13 @@ use crate::core::error::Result;
 
 use log::info;
 
-use ratatui::layout::{Alignment, Rect};
-use ratatui::widgets::{Paragraph, Widget};
 use ratatui::{
-    layout::{Constraint, Direction, Layout},
+    layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
-    widgets::{Block, Clear, List, ListItem},
+    widgets::{
+        Block, Clear, List, ListItem, Paragraph, Scrollbar, ScrollbarOrientation, ScrollbarState,
+        Widget,
+    },
     Frame,
 };
 
@@ -85,7 +86,7 @@ pub fn draw_ui(frame: &mut Frame<'_>, app: &App) -> Result<()> {
         .expect("Error getting instructions")
         .clone();
 
-    let display_lines = frame.area().height.saturating_sub(2) as usize;
+    let display_lines = frame.area().height.saturating_sub(6) as usize;
     let scroll_offset = if app.current_line >= display_lines - 2 {
         app.current_line - (display_lines - 3)
     } else {

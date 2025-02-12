@@ -5,8 +5,6 @@ use std::env;
 
 use log::{error, info, LevelFilter};
 
-use rounal::*;
-
 use simple_logging::*;
 
 #[tokio::main]
