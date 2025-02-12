@@ -14,13 +14,13 @@ use ratatui::{
 
 const GLOBAL_MARGIN: u16 = 1;
 
-fn render_after_clear<T: Widget>(f: &mut Frame<'_>, c: Rect, w: T) {
-    f.render_widget(Clear, c);
-    f.render_widget(w, c);
+fn render_after_clear<T: Widget>(f: &mut Frame<'_>, clearable: Rect, w: T) {
+    f.render_widget(Clear, clearable);
+    f.render_widget(w, clearable);
 }
 
-fn get_priority_color(p: &u8) -> Style {
-    match p {
+fn get_priority_color(priority: &u8) -> Style {
+    match priority {
         1 => Style::default()
             .fg(Color::Rgb(211, 10, 39))
             .add_modifier(Modifier::BOLD),
@@ -36,8 +36,8 @@ fn get_priority_color(p: &u8) -> Style {
     }
 }
 
-fn get_logs_title(p: &u8) -> String {
-    let postfix = match p {
+fn get_logs_title(priority: &u8) -> String {
+    let postfix = match priority {
         1 => "emerg",
         2 => "alert",
         3 => "err",
@@ -47,7 +47,25 @@ fn get_logs_title(p: &u8) -> String {
         7 => "debug",
         _ => "unknown",
     };
-    format!("  Logs with priority {}/{}  ", p, postfix)
+    format!("  Logs with priority {}/{}  ", priority, postfix)
+}
+
+fn services_title(view: ServiceView) -> String {
+    match view {
+        ServiceView::Units => "  Service units  ".to_string(),
+        ServiceView::UnitFiles => "  Service unit files  ".to_string(),
+    }
+}
+
+fn create_list_item(index: usize, current_line: usize, service: &String) -> ListItem {
+    let style = if index == current_line.clone() {
+        Style::default()
+            .fg(Color::Rgb(5, 94, 207))
+            .add_modifier(Modifier::BOLD)
+    } else {
+        Style::default().fg(Color::White)
+    };
+    ListItem::new(service.clone()).style(style)
 }
 
 // handle the result/error
@@ -63,14 +81,14 @@ pub fn draw_ui(frame: &mut Frame<'_>, app: &App) -> Result<()> {
         .expect("Error getting terminal layout")
         .clone();
 
-    let display_lines = frame.area().height as usize;
+    let display_lines = frame.area().height.saturating_sub(2) as usize;
     let scroll_offset = if app.current_line >= display_lines - 2 {
         app.current_line - (display_lines - 3)
     } else {
         0
     };
 
-    if app.is_modal {
+    if app.is_in_logs {
         info!("DRAW_UI -> is modal");
 
         let priority = &app.selected_priority.unwrap_or_default();
@@ -120,21 +138,18 @@ pub fn draw_ui(frame: &mut Frame<'_>, app: &App) -> Result<()> {
             .enumerate()
             .skip(scroll_offset)
             .take(display_lines)
-            .map(|(i, service_name)| {
-                let style = if i == app.current_line {
-                    Style::default()
-                        .fg(Color::Blue)
-                        .add_modifier(Modifier::BOLD)
-                } else {
-                    Style::default()
-                };
-                ListItem::new(service_name.clone()).style(style)
+            .map(|(idx, service_name)| {
+                create_list_item(idx, app.current_line.clone(), service_name)
             })
             .collect();
 
         let list = List::new(items)
-            .block(Block::default().borders(Borders::ALL).title("Services"))
-            .highlight_style(
+            .block(
+                Block::default()
+                    .borders(Borders::ALL)
+                    .title(services_title(app.selected_service_view.clone())),
+            )
+            .style(
                 Style::default()
                     .fg(Color::Yellow)
                     .add_modifier(Modifier::BOLD),

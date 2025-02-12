@@ -10,14 +10,16 @@ use crossterm::terminal::{
 use crossterm::ExecutableCommand;
 
 use log::info;
+
 use ratatui::backend::{Backend, CrosstermBackend};
 use ratatui::Terminal;
 
 use std::io::stdout;
 use std::sync::{Arc, Mutex};
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Default, Clone)]
 pub enum ServiceView {
+    #[default]
     Units,
     UnitFiles,
 }
@@ -33,7 +35,7 @@ pub enum KeyEvents<'a> {
 pub struct App {
     pub is_running: bool,
     pub current_line: usize,
-    pub is_modal: bool,
+    pub is_in_logs: bool,
     pub logs: Option<SharedJournalLogs>,
     pub services: Option<(Vec<ServiceUnits>, Vec<ServiceUnitFiles>)>,
     pub selected_service: Option<String>,
@@ -41,13 +43,12 @@ pub struct App {
     pub selected_service_view: ServiceView,
 }
 
-// should impl default trait
 impl App {
     pub fn new() -> Self {
         Self {
             is_running: true,
             current_line: 0,
-            is_modal: false,
+            is_in_logs: false,
             logs: None,
             services: None,
             selected_service: None,
@@ -61,9 +62,14 @@ impl App {
         Ok(())
     }
 
+    fn set_view(&mut self, new_view: ServiceView) {
+        self.selected_service_view = new_view;
+    }
+
     fn set_init(&mut self) {
+        self.current_line = 0;
         self.selected_priority = Some(4);
-        self.is_modal = false;
+        self.is_in_logs = false;
         self.clear_logs();
     }
 
@@ -151,6 +157,24 @@ fn listen_key_events(app: &mut App) -> Option<KeyEvents> {
                 }
                 None
             }
+            KeyCode::Right | KeyCode::Char('h') => {
+                if app.selected_service_view == ServiceView::UnitFiles {
+                    info!("Change view to units");
+                    app.set_init();
+                    app.set_view(ServiceView::Units);
+                    return None;
+                }
+                None
+            }
+            KeyCode::Left | KeyCode::Char('l') => {
+                if app.selected_service_view == ServiceView::Units {
+                    info!("Change view to unitfiles");
+                    app.set_init();
+                    app.set_view(ServiceView::UnitFiles);
+                    return None;
+                }
+                None
+            }
             KeyCode::Enter => {
                 if let Some((u, f)) = &app.services {
                     match app.selected_service_view {
@@ -159,7 +183,7 @@ fn listen_key_events(app: &mut App) -> Option<KeyEvents> {
                             if let Some(service) = u.get(app.current_line) {
                                 info!("SELECTED SERVICE NOW {:?}", service);
                                 app.selected_service = Some(service.name.clone());
-                                app.is_modal = true;
+                                app.is_in_logs = true;
                             }
                         }
                         ServiceView::UnitFiles => {
@@ -167,7 +191,7 @@ fn listen_key_events(app: &mut App) -> Option<KeyEvents> {
                             if let Some(service) = f.get(app.current_line) {
                                 info!("SELECTED SERVICE NOW {:?}", service);
                                 app.selected_service = Some(service.name.clone());
-                                app.is_modal = true;
+                                app.is_in_logs = true;
                             }
                         }
                     }
@@ -181,7 +205,7 @@ fn listen_key_events(app: &mut App) -> Option<KeyEvents> {
                 None
             }
             KeyCode::Char('c') => {
-                if app.is_modal {
+                if app.is_in_logs {
                     app.set_init();
                 }
                 None
