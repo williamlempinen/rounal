@@ -8,7 +8,7 @@ use ratatui::widgets::Widget;
 use ratatui::{
     layout::{Constraint, Direction, Layout},
     style::{Color, Modifier, Style},
-    widgets::{Block, Borders, Clear, List, ListItem, Paragraph},
+    widgets::{Block, Clear, List, ListItem},
     Frame,
 };
 
@@ -57,7 +57,7 @@ fn services_title(view: ServiceView) -> String {
     }
 }
 
-fn create_list_item(index: usize, current_line: usize, service: &String) -> ListItem {
+fn create_list_item(index: usize, current_line: usize, service: String) -> ListItem<'static> {
     let style = if index == current_line.clone() {
         Style::default()
             .fg(Color::Rgb(5, 94, 207))
@@ -65,7 +65,7 @@ fn create_list_item(index: usize, current_line: usize, service: &String) -> List
     } else {
         Style::default().fg(Color::White)
     };
-    ListItem::new(service.clone()).style(style)
+    ListItem::new(service).style(style)
 }
 
 // handle the result/error
@@ -89,39 +89,42 @@ pub fn draw_ui(frame: &mut Frame<'_>, app: &App) -> Result<()> {
     };
 
     if app.is_in_logs {
-        info!("DRAW_UI -> is modal");
-
         let priority = &app.selected_priority.unwrap_or_default();
 
-        let logs_display = if let Some(logs_arc) = app.logs.as_ref() {
+        let logs_items: Vec<ListItem> = if let Some(logs_arc) = &app.logs {
             let logs_map = logs_arc.lock().unwrap();
-            logs_map
-                .get(priority)
-                .map(|logs| {
-                    logs.iter()
-                        .map(|log| {
-                            format!("[{}] {} - {}", log.timestamp, log.hostname, log.log_message)
-                        })
-                        .collect::<Vec<_>>()
-                        .join("\n")
-                })
-                .unwrap_or_else(|| "No logs available".to_string())
+            if let Some(log_entries) = logs_map.get(priority) {
+                log_entries
+                    .iter()
+                    .enumerate()
+                    .skip(scroll_offset)
+                    .take(display_lines)
+                    .map(|(idx, log)| {
+                        create_list_item(
+                            idx,
+                            app.current_line.clone(),
+                            format!("[{}] {} - {}", log.timestamp, log.hostname, log.log_message),
+                        )
+                    })
+                    .collect()
+            } else {
+                vec![ListItem::new("No logs available").style(get_priority_color(&0))]
+            }
         } else {
-            "No logs available".to_string()
+            vec![ListItem::new("No logs available").style(get_priority_color(&0))]
         };
 
-        let modal_content = Paragraph::new(logs_display)
+        let logs_list = List::new(logs_items)
             .block(
                 Block::bordered()
                     .title_alignment(Alignment::Center)
                     .title(get_logs_title(priority))
                     .style(get_priority_color(priority)),
             )
-            .style(get_priority_color(&0)); // use unknown to make white
+            .style(get_priority_color(&0));
 
-        render_after_clear(frame, terminal, modal_content);
+        render_after_clear(frame, terminal, logs_list);
     } else {
-        info!("DRAW_UI -> no modal");
         let services: Vec<String> = match &app.services {
             Some((units, unit_files)) => {
                 if app.selected_service_view == ServiceView::Units {
@@ -139,19 +142,19 @@ pub fn draw_ui(frame: &mut Frame<'_>, app: &App) -> Result<()> {
             .skip(scroll_offset)
             .take(display_lines)
             .map(|(idx, service_name)| {
-                create_list_item(idx, app.current_line.clone(), service_name)
+                create_list_item(idx, app.current_line, service_name.clone())
             })
             .collect();
 
         let list = List::new(items)
             .block(
-                Block::default()
-                    .borders(Borders::ALL)
+                Block::bordered()
+                    .title_alignment(Alignment::Center)
                     .title(services_title(app.selected_service_view.clone())),
             )
             .style(
                 Style::default()
-                    .fg(Color::Yellow)
+                    .fg(Color::Green)
                     .add_modifier(Modifier::BOLD),
             );
 

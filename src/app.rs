@@ -57,6 +57,13 @@ impl App {
         }
     }
 
+    fn set_init(&mut self) {
+        self.current_line = 0;
+        self.selected_priority = Some(4);
+        self.is_in_logs = false;
+        self.clear_logs();
+    }
+
     fn set_services(&mut self, services: (Vec<ServiceUnits>, Vec<ServiceUnitFiles>)) -> Result<()> {
         self.services = Some(services);
         Ok(())
@@ -66,11 +73,8 @@ impl App {
         self.selected_service_view = new_view;
     }
 
-    fn set_init(&mut self) {
-        self.current_line = 0;
-        self.selected_priority = Some(4);
-        self.is_in_logs = false;
-        self.clear_logs();
+    fn set_current_line(&mut self, position: usize) {
+        self.current_line = position;
     }
 
     fn set_logs(&mut self, logs: Arc<Mutex<JournalLogMap>>) {
@@ -136,6 +140,22 @@ fn listen_key_events(app: &mut App) -> Option<KeyEvents> {
         match key.code {
             KeyCode::Esc | KeyCode::Char('q') => Some(KeyEvents::Quit),
             KeyCode::Down | KeyCode::Char('j') => {
+                if app.is_in_logs {
+                    let logs_len = if let Some(logs_arc) = &app.logs {
+                        let logs_map = logs_arc.lock().unwrap();
+                        logs_map
+                            .get(&app.selected_priority.unwrap_or(4))
+                            .map(|logs| logs.len())
+                            .unwrap_or(0)
+                    } else {
+                        0
+                    };
+
+                    if app.current_line < logs_len.saturating_sub(1) {
+                        app.current_line += 1;
+                    }
+                    return None;
+                }
                 let services_len = match &app.services {
                     Some((u, f)) => {
                         if app.selected_service_view == ServiceView::Units {
@@ -201,7 +221,7 @@ fn listen_key_events(app: &mut App) -> Option<KeyEvents> {
                 }
             }
             KeyCode::Char('y') => {
-                info!("wants to yank this");
+                info!("i want to yank this");
                 None
             }
             KeyCode::Char('c') => {
@@ -212,6 +232,7 @@ fn listen_key_events(app: &mut App) -> Option<KeyEvents> {
             }
             KeyCode::Char(key) => {
                 if ('1'..='7').contains(&key) {
+                    app.set_current_line(0);
                     app.selected_priority = Some(key.to_digit(10).unwrap() as u8);
                     return None;
                 }
