@@ -1,7 +1,9 @@
-use crate::journal::{get_journal_logs, JournalLogMap, SharedJournalLogs};
-use crate::system::{get_system_services, ServiceUnitFiles, ServiceUnits};
-use crate::ui::draw_ui;
-use crate::{Result, RounalError};
+use crate::core::config::Config;
+use crate::core::error::{Result, RounalError};
+use crate::core::journal::{get_journal_logs, JournalLogMap, SharedJournalLogs};
+use crate::core::system::{get_system_services, ServiceUnitFiles, ServiceUnits};
+
+use crate::ui::ui::draw_ui;
 
 use crossterm::event::{self, Event, KeyCode};
 use crossterm::terminal::{
@@ -24,7 +26,7 @@ pub enum ServiceView {
     UnitFiles,
 }
 
-// todo
+// TODO
 #[derive(PartialEq)]
 pub enum KeyEvents<'a> {
     Quit,
@@ -35,7 +37,8 @@ pub enum KeyEvents<'a> {
 //      - vim-like search
 //      - filtering based on status (failed | running | exited)
 //      - read custom configs
-//      - refactor
+//      - scrollbar
+//      - yanking
 
 #[derive(Debug)]
 pub struct App {
@@ -64,7 +67,6 @@ impl App {
     }
 
     fn set_init(&mut self) {
-        self.current_line = 0;
         self.selected_priority = Some(4);
         self.is_in_logs = false;
         self.clear_logs();
@@ -184,20 +186,24 @@ fn listen_key_events(app: &mut App) -> Option<KeyEvents> {
                 None
             }
             KeyCode::Right | KeyCode::Char('h') => {
-                if app.selected_service_view == ServiceView::UnitFiles {
-                    info!("Change view to units");
-                    app.set_init();
-                    app.set_view(ServiceView::Units);
-                    return None;
+                if !app.is_in_logs {
+                    if app.selected_service_view == ServiceView::UnitFiles {
+                        info!("Change view to units");
+                        app.set_init();
+                        app.set_view(ServiceView::Units);
+                        return None;
+                    }
                 }
                 None
             }
             KeyCode::Left | KeyCode::Char('l') => {
-                if app.selected_service_view == ServiceView::Units {
-                    info!("Change view to unitfiles");
-                    app.set_init();
-                    app.set_view(ServiceView::UnitFiles);
-                    return None;
+                if !app.is_in_logs {
+                    if app.selected_service_view == ServiceView::Units {
+                        info!("Change view to unitfiles");
+                        app.set_init();
+                        app.set_view(ServiceView::UnitFiles);
+                        return None;
+                    }
                 }
                 None
             }

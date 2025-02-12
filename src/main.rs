@@ -1,11 +1,16 @@
+mod core;
+mod ui;
+
 use std::env;
 
 use log::{error, info, LevelFilter};
-use rounal::{app, Result};
+
+use rounal::*;
+
 use simple_logging::*;
 
 #[tokio::main]
-async fn main() -> Result<()> {
+async fn main() -> core::error::Result<()> {
     env::set_var("RUST_BACKTRACE", "1");
     env::set_var("RUST_LOG", "info");
 
@@ -13,7 +18,7 @@ async fn main() -> Result<()> {
 
     info!("Rounal STARTING");
 
-    if let Err(err) = app::start_application().await {
+    if let Err(err) = core::app::start_application().await {
         error!("Rounal application error: {}", err);
     }
 

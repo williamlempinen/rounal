@@ -1,4 +1,5 @@
 use log::info;
+
 use std::{
     collections::HashMap,
     sync::{Arc, Mutex},
@@ -6,7 +7,7 @@ use std::{
 
 use tokio::{process::Command, sync::mpsc};
 
-use crate::{Result, RounalError};
+use crate::core::error::{Result, RounalError};
 
 #[derive(Debug, Clone)]
 pub struct JournalLog {
