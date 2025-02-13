@@ -1,11 +1,12 @@
 use crate::app::App;
 
-use crate::core::{config::Config, error::Result};
+use crate::core::error::Result;
 
 use crate::ui::{
     layouts::center,
-    styles::{create_list_item, get_logs_title, get_priority_color, services_title, GLOBAL_MARGIN},
+    styles::{create_list_item, services_title, GLOBAL_MARGIN},
 };
+use crate::util::map_to_priority_str;
 
 use log::info;
 
@@ -27,7 +28,6 @@ pub enum View {
 
 #[derive(Debug)]
 pub struct UI {
-    pub config: Config,
     pub view: View,
     pub is_showing_help: bool,
     pub is_in_logs: bool,
@@ -40,9 +40,8 @@ pub struct UI {
 }
 
 impl UI {
-    pub fn new(config: Config) -> Self {
+    pub fn new() -> Self {
         Self {
-            config,
             view: View::ServiceUnits,
             is_showing_help: false,
             is_in_logs: false,
@@ -101,6 +100,9 @@ fn render_after_clear<T: Widget>(f: &mut Frame<'_>, clearable: Rect, w: T) {
 // handle the result/error
 pub fn draw_ui(frame: &mut Frame<'_>, app: &App) -> Result<()> {
     info!("ENTER DRAW_UI");
+
+    let config = app.config.clone();
+
     let terminal_layout = Layout::default()
         .margin(GLOBAL_MARGIN)
         .direction(Direction::Vertical)
@@ -124,6 +126,8 @@ pub fn draw_ui(frame: &mut Frame<'_>, app: &App) -> Result<()> {
 
     if app.ui.is_in_logs {
         let priority = &app.ui.selected_priority.unwrap_or_default();
+        let priority_str = map_to_priority_str(priority);
+        let priority_style = Style::default().fg(config.get_priority_color(&priority_str));
 
         let logs_items: Vec<ListItem> = if let Some(logs_arc) = &app.logs {
             let logs_map = logs_arc.lock().unwrap();
@@ -142,34 +146,23 @@ pub fn draw_ui(frame: &mut Frame<'_>, app: &App) -> Result<()> {
                     })
                     .collect()
             } else {
-                vec![
-                    ListItem::new("No logs available").style(get_priority_color(&0)),
-                    ListItem::new("No logs available").style(get_priority_color(&0)),
-                    ListItem::new("No logs available").style(get_priority_color(&0)),
-                    ListItem::new("No logs available").style(get_priority_color(&0)),
-                    ListItem::new("No logs available").style(get_priority_color(&0)),
-                    ListItem::new("No logs available").style(get_priority_color(&0)),
-                ]
+                vec![ListItem::new("No logs available").style(priority_style)]
             }
         } else {
-            vec![
-                ListItem::new("No logs available").style(get_priority_color(&0)),
-                ListItem::new("No logs available").style(get_priority_color(&0)),
-                ListItem::new("No logs available").style(get_priority_color(&0)),
-                ListItem::new("No logs available").style(get_priority_color(&0)),
-                ListItem::new("No logs available").style(get_priority_color(&0)),
-                ListItem::new("No logs available").style(get_priority_color(&0)),
-            ]
+            vec![ListItem::new("No logs available").style(priority_style)]
         };
 
         let logs_list = List::new(logs_items)
             .block(
                 Block::bordered()
                     .title_alignment(Alignment::Center)
-                    .title(get_logs_title(priority))
-                    .style(get_priority_color(priority)),
+                    .title(format!(
+                        "  Logs with priority {}/{}  ",
+                        priority, priority_str
+                    ))
+                    .style(priority_style),
             )
-            .style(get_priority_color(&0));
+            .style(priority_style);
 
         render_after_clear(frame, content_area, logs_list);
     } else {

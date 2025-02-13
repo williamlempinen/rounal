@@ -36,12 +36,12 @@ pub enum Events {
 
 // TODO:
 //      - scrollbar
+//      - error handling
 //      - yanking
 //      - action mode
 //      - vim-like search
 //      - styled entries for both services and logs
 //      - read custom configs
-//      - error handling
 //      - filtering based on status (failed | running | exited)
 //      - catch sudo
 
@@ -58,7 +58,7 @@ pub struct App {
 impl App {
     pub fn new(config: Config) -> Self {
         Self {
-            ui: UI::new(config.clone()),
+            ui: UI::new(),
             config,
             is_running: true,
             logs: None,

@@ -75,7 +75,7 @@ impl Config {
             RounalError::ConfigurationFileError
         })?;
 
-        Ok(config)
+        Ok(config.clone())
     }
 
     pub fn get_palette_color(&self, color_name: &str) -> Color {
