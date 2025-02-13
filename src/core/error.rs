@@ -18,4 +18,7 @@ pub enum RounalError {
 
     #[error("Unexpected application error")]
     UnexpectedError(String),
+
+    #[error("Config file error")]
+    ConfigurationFileError,
 }
