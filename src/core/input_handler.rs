@@ -58,6 +58,7 @@ fn handle_logs_key_events(app: &mut App, key: crossterm::event::KeyEvent) -> Opt
         KeyCode::Char('c') => {
             app.clear_logs();
             app.ui.is_in_logs = false;
+            //app.ui.set_init_priority(); TODO
             None
         }
         KeyCode::Char('y') => {
@@ -118,6 +119,7 @@ fn handle_services_key_events(app: &mut App, key: crossterm::event::KeyEvent) ->
                             info!("SELECTED SERVICE NOW {:?}", service);
                             app.selected_service = Some(service.name.clone());
                             app.ui.is_in_logs = true;
+                            app.ui.set_current_line(0);
                         }
                     }
                     View::ServiceUnitFiles => {
@@ -126,6 +128,7 @@ fn handle_services_key_events(app: &mut App, key: crossterm::event::KeyEvent) ->
                             info!("SELECTED SERVICE NOW {:?}", service);
                             app.selected_service = Some(service.name.clone());
                             app.ui.is_in_logs = true;
+                            app.ui.set_current_line(0);
                         }
                     }
                 }

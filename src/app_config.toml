@@ -23,3 +23,5 @@
   description = true
   # yank only the message/info or yank everything - info | full
   yank = "info"
+  # initial priority is presented first when selecting a service - [1 - 7]
+  initial_priority = 5

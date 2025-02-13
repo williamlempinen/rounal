@@ -47,8 +47,8 @@ impl UI {
             is_in_logs: false,
             selected_priority: Some(5),
             current_line: 0,
-            vertical_scroll_state: ScrollbarState::default(),
-            horizontal_scroll_state: ScrollbarState::default(),
+            vertical_scroll_state: ScrollbarState::new(0),
+            horizontal_scroll_state: ScrollbarState::new(0),
             verical_scroll: 0,
             horizontal_scroll: 0,
         }
@@ -79,16 +79,22 @@ impl UI {
         self.current_line = position;
     }
 
+    pub fn update_scrollbar(&mut self, position: usize) {
+        self.vertical_scroll_state = ScrollbarState::new(position);
+    }
+
     pub fn move_cursor_down(&mut self, max: usize) {
         if self.current_line < max.saturating_sub(1) {
             self.current_line += 1;
         }
+        self.update_scrollbar(max);
     }
 
     pub fn move_cursor_up(&mut self) {
         if self.current_line > 0 {
             self.current_line -= 1;
         }
+        self.update_scrollbar(self.current_line);
     }
 }
 
@@ -98,7 +104,7 @@ fn render_after_clear<T: Widget>(f: &mut Frame<'_>, clearable: Rect, w: T) {
 }
 
 // handle the result/error
-pub fn draw_ui(frame: &mut Frame<'_>, app: &App) -> Result<()> {
+pub fn draw_ui(frame: &mut Frame<'_>, app: &mut App) -> Result<()> {
     info!("ENTER DRAW_UI");
 
     let config = app.config.clone();
@@ -220,6 +226,14 @@ pub fn draw_ui(frame: &mut Frame<'_>, app: &App) -> Result<()> {
         .style(Style::default().fg(Color::White));
 
     render_after_clear(frame, action_area, i);
+
+    let scrollbar = Scrollbar::default()
+        .orientation(ScrollbarOrientation::VerticalRight)
+        .begin_symbol(Some("↑"))
+        .end_symbol(Some("↓"))
+        .thumb_symbol("█");
+
+    frame.render_stateful_widget(scrollbar, content_area, &mut app.ui.vertical_scroll_state);
 
     Ok(())
 }

@@ -116,7 +116,7 @@ pub async fn start_application(config: Config) -> Result<()> {
 async fn run<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> Result<()> {
     while app.is_running {
         terminal.draw(|frame| {
-            draw_ui(frame, &app).ok();
+            draw_ui(frame, &mut app).ok();
 
             if app.ui.is_showing_help {
                 draw_help_modal(frame).ok();
