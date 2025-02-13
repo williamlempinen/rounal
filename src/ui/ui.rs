@@ -4,6 +4,10 @@ use crate::app::{App, ServiceView};
 
 use log::info;
 
+use crate::ui::styles::{
+    create_list_item, get_logs_title, get_priority_color, services_title, GLOBAL_MARGIN,
+};
+
 use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
@@ -31,60 +35,9 @@ pub struct UI {
     pub horizontal_scroll: usize,
 }
 
-const GLOBAL_MARGIN: u16 = 1;
-
 fn render_after_clear<T: Widget>(f: &mut Frame<'_>, clearable: Rect, w: T) {
     f.render_widget(Clear, clearable);
     f.render_widget(w, clearable);
-}
-
-fn get_priority_color(priority: &u8) -> Style {
-    match priority {
-        1 => Style::default()
-            .fg(Color::Rgb(211, 10, 39))
-            .add_modifier(Modifier::BOLD),
-        2 => Style::default()
-            .fg(Color::Rgb(198, 19, 22))
-            .add_modifier(Modifier::BOLD),
-        3 => Style::default().fg(Color::Rgb(206, 70, 6)),
-        4 => Style::default().fg(Color::Rgb(235, 82, 5)),
-        5 => Style::default().fg(Color::Yellow),
-        6 => Style::default().fg(Color::Green),
-        7 => Style::default().fg(Color::Blue),
-        _ => Style::default().fg(Color::White),
-    }
-}
-
-fn get_logs_title(priority: &u8) -> String {
-    let postfix = match priority {
-        1 => "emerg",
-        2 => "alert",
-        3 => "err",
-        4 => "warning",
-        5 => "notice",
-        6 => "info",
-        7 => "debug",
-        _ => "unknown",
-    };
-    format!("  Logs with priority {}/{}  ", priority, postfix)
-}
-
-fn services_title(view: ServiceView) -> String {
-    match view {
-        ServiceView::Units => "  Service units  ".to_string(),
-        ServiceView::UnitFiles => "  Service unit files  ".to_string(),
-    }
-}
-
-fn create_list_item(index: usize, current_line: usize, service: String) -> ListItem<'static> {
-    let style = if index == current_line.clone() {
-        Style::default()
-            .fg(Color::Rgb(5, 94, 207))
-            .add_modifier(Modifier::BOLD)
-    } else {
-        Style::default().fg(Color::White)
-    };
-    ListItem::new(service).style(style)
 }
 
 // handle the result/error
@@ -99,7 +52,7 @@ pub fn draw_ui(frame: &mut Frame<'_>, app: &App) -> Result<()> {
         .get(0)
         .expect("Error getting terminal layout")
         .clone();
-    let instructions = terminal_layout
+    let action_area = terminal_layout
         .get(1)
         .expect("Error getting instructions")
         .clone();
@@ -165,9 +118,20 @@ pub fn draw_ui(frame: &mut Frame<'_>, app: &App) -> Result<()> {
         let services: Vec<String> = match &app.services {
             Some((units, unit_files)) => {
                 if app.selected_service_view == ServiceView::Units {
-                    units.iter().map(|u| u.name.clone()).collect()
+                    units
+                        .iter()
+                        .map(|u| {
+                            format!(
+                                "{}: {} -- States [{:?} {:?} {:?}]",
+                                u.name, u.description, u.active, u.sub, u.load
+                            )
+                        })
+                        .collect()
                 } else {
-                    unit_files.iter().map(|f| f.name.clone()).collect()
+                    unit_files
+                        .iter()
+                        .map(|f| format!("{} {:?} {:?}", f.name, f.state, f.preset))
+                        .collect()
                 }
             }
             None => vec![],
@@ -205,7 +169,7 @@ pub fn draw_ui(frame: &mut Frame<'_>, app: &App) -> Result<()> {
         .alignment(Alignment::Center)
         .style(Style::default().fg(Color::White));
 
-    render_after_clear(frame, instructions, i);
+    render_after_clear(frame, action_area, i);
 
     Ok(())
 }

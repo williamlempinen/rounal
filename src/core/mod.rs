@@ -1,5 +1,5 @@
 pub mod config;
 pub mod error;
-pub mod handler;
+pub mod input_handler;
 pub mod journal;
 pub mod system;
