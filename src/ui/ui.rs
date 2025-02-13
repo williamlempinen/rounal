@@ -1,6 +1,6 @@
-use crate::core::error::Result;
-
 use crate::app::{App, ServiceView};
+
+use crate::core::error::Result;
 
 use log::info;
 

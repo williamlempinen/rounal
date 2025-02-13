@@ -2,6 +2,7 @@
 name = "rounal"
 version = "0.1.0"
 edition = "2021"
+path = "src/lib.rs"
 
 [dependencies]
 crossterm = "0.28.1"

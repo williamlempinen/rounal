@@ -41,7 +41,7 @@ pub async fn get_journal_logs(service: &str) -> Result<SharedJournalLogs> {
                 .expect("Error getting logs for: {service} with priority: {p}");
 
             thread_logs.lock().unwrap().insert(p, logs);
-            log::info!("Done");
+            info!("Done");
             thread_sender.send(()).await.unwrap();
         });
     }

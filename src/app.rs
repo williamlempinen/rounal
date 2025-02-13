@@ -46,6 +46,7 @@ pub enum Events {
 //      - yanking
 //      - action mode
 //      - vim-like search
+//      - styled entries for both services and logs
 //      - read custom configs
 //      - error handling
 //      - filtering based on status (failed | running | exited)
@@ -53,7 +54,9 @@ pub enum Events {
 
 #[derive(Debug)]
 pub struct App {
+    pub config: Config,
     pub is_running: bool,
+    pub is_showing_help: bool,
     pub is_in_logs: bool,
     pub current_line: usize,
     pub logs: Option<SharedJournalLogs>,
@@ -64,8 +67,10 @@ pub struct App {
 }
 
 impl App {
-    pub fn new() -> Self {
+    pub fn new(config: Config) -> Self {
         Self {
+            config,
+            is_showing_help: false,
             is_running: true,
             is_in_logs: false,
             current_line: 0,
@@ -81,6 +86,10 @@ impl App {
         self.selected_priority = Some(4);
         self.is_in_logs = false;
         self.clear_logs();
+    }
+
+    pub fn set_is_showing_help(&mut self, state: bool) {
+        self.is_showing_help = state;
     }
 
     pub fn set_priority(&mut self, priority: u8) {
@@ -112,7 +121,7 @@ impl App {
     }
 }
 
-pub async fn start_application() -> Result<()> {
+pub async fn start_application(config: Config) -> Result<()> {
     let mut stdout = stdout();
     enable_raw_mode()?;
     stdout.execute(EnterAlternateScreen)?;
@@ -121,7 +130,7 @@ pub async fn start_application() -> Result<()> {
         let backend = CrosstermBackend::new(&mut stdout);
         let mut terminal = Terminal::new(backend).map_err(RounalError::TerminalError)?;
 
-        let mut app = App::new();
+        let mut app = App::new(config);
         let services = get_system_services().await?;
         info!("GOT SERVICES");
         app.set_services(services)?;

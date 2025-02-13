@@ -14,3 +14,6 @@
   info = [0, 255, 0]
   debug = [0, 0, 255]
   unknown = [255, 255, 255]
+
+[debug_level]
+  level = "info"

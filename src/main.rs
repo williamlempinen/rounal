@@ -1,28 +1,24 @@
-mod core;
-mod ui;
+use rounal::core::{config::Config, error::Result};
 
-use core::config::Config;
 use std::env;
 
 use rounal::app;
 
-use log::{error, info, LevelFilter};
+use log::{error, info};
 
 use simple_logging::*;
 
 #[tokio::main]
-async fn main() -> core::error::Result<()> {
+async fn main() -> Result<()> {
     env::set_var("RUST_BACKTRACE", "1");
-    env::set_var("RUST_LOG", "info");
-
-    let _ = log_to_file("debug.log", LevelFilter::Info);
-
-    info!("Rounal STARTING");
 
     let config = Config::load("src/app_config.toml")?;
-    info!("CONFIG: {:?}", config);
+    let _ = log_to_file("debug.log", config.debug_level.to_level_filter());
 
-    if let Err(err) = app::start_application().await {
+    info!("CONFIG: {:?}", config);
+    info!("Rounal STARTING");
+
+    if let Err(err) = app::start_application(config).await {
         error!("Rounal application error: {}", err);
     }
 

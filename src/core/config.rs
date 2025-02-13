@@ -8,9 +8,9 @@ use std::{fs, path::Path};
 
 use toml;
 
-use log::error;
+use log::{error, LevelFilter};
 
-#[derive(Debug, Deserialize, Default)]
+#[derive(Debug, Deserialize)]
 pub struct Palette {
     pub red: [u8; 3],
     pub black: [u8; 3],
@@ -19,7 +19,7 @@ pub struct Palette {
     pub gray: [u8; 3],
 }
 
-#[derive(Debug, Deserialize, Default)]
+#[derive(Debug, Deserialize)]
 pub struct Priority {
     pub emerg: [u8; 3],
     pub alert: [u8; 3],
@@ -31,10 +31,37 @@ pub struct Priority {
     pub unknown: [u8; 3],
 }
 
-#[derive(Debug, Deserialize, Default)]
+#[derive(Debug, Deserialize)]
+pub struct DebugLevel {
+    level: String,
+}
+
+impl Default for DebugLevel {
+    fn default() -> Self {
+        Self {
+            level: "info".to_string(),
+        }
+    }
+}
+
+impl DebugLevel {
+    pub fn to_level_filter(&self) -> LevelFilter {
+        match self.level.to_lowercase().as_str() {
+            "error" => LevelFilter::Error,
+            "warn" => LevelFilter::Warn,
+            "info" => LevelFilter::Info,
+            "debug" => LevelFilter::Debug,
+            "trace" => LevelFilter::Trace,
+            _ => LevelFilter::Off,
+        }
+    }
+}
+
+#[derive(Debug, Deserialize)]
 pub struct Config {
     pub palette: Palette,
     pub priority: Priority,
+    pub debug_level: DebugLevel,
 }
 
 impl Config {
@@ -57,5 +84,82 @@ impl Config {
         })?;
 
         Ok(config)
+    }
+
+    pub fn get_palette_color(&self, color_name: &str) -> Color {
+        match color_name {
+            "red" => Color::Rgb(
+                self.palette.red[0],
+                self.palette.red[1],
+                self.palette.red[2],
+            ),
+            "black" => Color::Rgb(
+                self.palette.black[0],
+                self.palette.black[1],
+                self.palette.black[2],
+            ),
+            "blue" => Color::Rgb(
+                self.palette.blue[0],
+                self.palette.blue[1],
+                self.palette.blue[2],
+            ),
+            "white" => Color::Rgb(
+                self.palette.white[0],
+                self.palette.white[1],
+                self.palette.white[2],
+            ),
+            "gray" => Color::Rgb(
+                self.palette.gray[0],
+                self.palette.gray[1],
+                self.palette.gray[2],
+            ),
+            _ => Color::White,
+        }
+    }
+
+    pub fn get_priority_color(&self, level: &str) -> Color {
+        match level {
+            "emerg" => Color::Rgb(
+                self.priority.emerg[0],
+                self.priority.emerg[1],
+                self.priority.emerg[2],
+            ),
+            "alert" => Color::Rgb(
+                self.priority.alert[0],
+                self.priority.alert[1],
+                self.priority.alert[2],
+            ),
+            "err" => Color::Rgb(
+                self.priority.err[0],
+                self.priority.err[1],
+                self.priority.err[2],
+            ),
+            "warn" => Color::Rgb(
+                self.priority.warn[0],
+                self.priority.warn[1],
+                self.priority.warn[2],
+            ),
+            "notice" => Color::Rgb(
+                self.priority.notice[0],
+                self.priority.notice[1],
+                self.priority.notice[2],
+            ),
+            "info" => Color::Rgb(
+                self.priority.info[0],
+                self.priority.info[1],
+                self.priority.info[2],
+            ),
+            "debug" => Color::Rgb(
+                self.priority.debug[0],
+                self.priority.debug[1],
+                self.priority.debug[2],
+            ),
+            "unknown" => Color::Rgb(
+                self.priority.unknown[0],
+                self.priority.unknown[1],
+                self.priority.unknown[2],
+            ),
+            _ => Color::White,
+        }
     }
 }
