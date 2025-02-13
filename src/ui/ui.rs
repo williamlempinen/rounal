@@ -1,12 +1,13 @@
-use crate::app::{App, ServiceView};
+use crate::app::App;
 
-use crate::core::error::Result;
+use crate::core::{config::Config, error::Result};
+
+use crate::ui::{
+    layouts::center,
+    styles::{create_list_item, get_logs_title, get_priority_color, services_title, GLOBAL_MARGIN},
+};
 
 use log::info;
-
-use crate::ui::styles::{
-    create_list_item, get_logs_title, get_priority_color, services_title, GLOBAL_MARGIN,
-};
 
 use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
@@ -18,21 +19,78 @@ use ratatui::{
     Frame,
 };
 
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum View {
     ServiceUnits,
     ServiceUnitFiles,
-    Logs,
 }
 
 #[derive(Debug)]
 pub struct UI {
+    pub config: Config,
     pub view: View,
-    pub is_looking_help: bool,
+    pub is_showing_help: bool,
+    pub is_in_logs: bool,
+    pub selected_priority: Option<u8>,
+    pub current_line: usize,
     pub vertical_scroll_state: ScrollbarState,
     pub horizontal_scroll_state: ScrollbarState,
     pub verical_scroll: usize,
     pub horizontal_scroll: usize,
+}
+
+impl UI {
+    pub fn new(config: Config) -> Self {
+        Self {
+            config,
+            view: View::ServiceUnits,
+            is_showing_help: false,
+            is_in_logs: false,
+            selected_priority: Some(5),
+            current_line: 0,
+            vertical_scroll_state: ScrollbarState::default(),
+            horizontal_scroll_state: ScrollbarState::default(),
+            verical_scroll: 0,
+            horizontal_scroll: 0,
+        }
+    }
+
+    pub fn toggle_help(&mut self) {
+        self.is_showing_help = !self.is_showing_help;
+    }
+
+    pub fn toggle_logs(&mut self) {
+        self.is_in_logs = !self.is_in_logs;
+    }
+
+    pub fn set_view(&mut self, new_view: View) {
+        self.view = new_view;
+    }
+
+    pub fn set_is_showing_help(&mut self, state: bool) {
+        self.is_showing_help = state;
+    }
+
+    pub fn set_priority(&mut self, priority: u8) {
+        self.selected_priority = Some(priority);
+        self.current_line = 0;
+    }
+
+    pub fn set_current_line(&mut self, position: usize) {
+        self.current_line = position;
+    }
+
+    pub fn move_cursor_down(&mut self, max: usize) {
+        if self.current_line < max.saturating_sub(1) {
+            self.current_line += 1;
+        }
+    }
+
+    pub fn move_cursor_up(&mut self) {
+        if self.current_line > 0 {
+            self.current_line -= 1;
+        }
+    }
 }
 
 fn render_after_clear<T: Widget>(f: &mut Frame<'_>, clearable: Rect, w: T) {
@@ -58,14 +116,14 @@ pub fn draw_ui(frame: &mut Frame<'_>, app: &App) -> Result<()> {
         .clone();
 
     let display_lines = frame.area().height.saturating_sub(6) as usize;
-    let scroll_offset = if app.current_line >= display_lines - 2 {
-        app.current_line - (display_lines - 3)
+    let scroll_offset = if app.ui.current_line >= display_lines - 2 {
+        app.ui.current_line - (display_lines - 3)
     } else {
         0
     };
 
-    if app.is_in_logs {
-        let priority = &app.selected_priority.unwrap_or_default();
+    if app.ui.is_in_logs {
+        let priority = &app.ui.selected_priority.unwrap_or_default();
 
         let logs_items: Vec<ListItem> = if let Some(logs_arc) = &app.logs {
             let logs_map = logs_arc.lock().unwrap();
@@ -78,7 +136,7 @@ pub fn draw_ui(frame: &mut Frame<'_>, app: &App) -> Result<()> {
                     .map(|(idx, log)| {
                         create_list_item(
                             idx,
-                            app.current_line.clone(),
+                            app.ui.current_line.clone(),
                             format!("[{}] {} - {}", log.timestamp, log.hostname, log.log_message),
                         )
                     })
@@ -117,7 +175,7 @@ pub fn draw_ui(frame: &mut Frame<'_>, app: &App) -> Result<()> {
     } else {
         let services: Vec<String> = match &app.services {
             Some((units, unit_files)) => {
-                if app.selected_service_view == ServiceView::Units {
+                if app.ui.view == View::ServiceUnits {
                     units
                         .iter()
                         .map(|u| {
@@ -143,7 +201,7 @@ pub fn draw_ui(frame: &mut Frame<'_>, app: &App) -> Result<()> {
             .skip(scroll_offset)
             .take(display_lines)
             .map(|(idx, service_name)| {
-                create_list_item(idx, app.current_line, service_name.clone())
+                create_list_item(idx, app.ui.current_line, service_name.clone())
             })
             .collect();
 
@@ -151,7 +209,7 @@ pub fn draw_ui(frame: &mut Frame<'_>, app: &App) -> Result<()> {
             .block(
                 Block::bordered()
                     .title_alignment(Alignment::Center)
-                    .title(services_title(app.selected_service_view.clone())),
+                    .title(services_title(app.ui.view.clone())),
             )
             .style(
                 Style::default()
@@ -162,14 +220,42 @@ pub fn draw_ui(frame: &mut Frame<'_>, app: &App) -> Result<()> {
         render_after_clear(frame, content_area, list);
     }
 
-    let i_txt =
-        "Move-[hjkl/arrows] | Select-[Enter] | Close logs-[c] | Change priority-[1-7] | Quit-[q/Esc]";
+    let i_txt = " -- Press [?] for help -- ";
     let i = Paragraph::new(i_txt)
-        .block(Block::bordered().title("Help"))
+        .block(Block::bordered())
         .alignment(Alignment::Center)
         .style(Style::default().fg(Color::White));
 
     render_after_clear(frame, action_area, i);
+
+    Ok(())
+}
+
+pub fn draw_help_modal(frame: &mut Frame<'_>) -> Result<()> {
+    let area = center(frame.area(), Constraint::Max(40), Constraint::Max(20));
+
+    let help_text = "Rounal - Key Mappings\n\n\
+        Move: [hjkl / arrow keys]\n\
+        Select: [Enter]\n\
+        Close logs: [c]\n\
+        Change priority: [1-7] or [Move]\n\
+        Yank message: y \n\
+        Begin search: / \n\
+        Quit: [q / Esc]\n\
+        Toggle Help: [?]\n";
+
+    let help_modal = Paragraph::new(help_text)
+        .block(
+            Block::bordered().title(" Help ").style(
+                Style::default()
+                    .fg(Color::White)
+                    .bg(Color::Black)
+                    .add_modifier(Modifier::BOLD),
+            ),
+        )
+        .alignment(Alignment::Center);
+
+    render_after_clear(frame, area, help_modal);
 
     Ok(())
 }

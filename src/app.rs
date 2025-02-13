@@ -6,7 +6,7 @@ use crate::core::{
     system::{get_system_services, ServiceUnitFiles, ServiceUnits},
 };
 
-use crate::ui::ui::draw_ui;
+use crate::ui::ui::{draw_help_modal, draw_ui, UI};
 
 use std::{
     io::stdout,
@@ -24,13 +24,6 @@ use ratatui::{
     backend::{Backend, CrosstermBackend},
     Terminal,
 };
-
-#[derive(PartialEq, Debug, Default, Clone)]
-pub enum ServiceView {
-    #[default]
-    Units,
-    UnitFiles,
-}
 
 // TODO
 #[derive(PartialEq)]
@@ -54,46 +47,28 @@ pub enum Events {
 
 #[derive(Debug)]
 pub struct App {
+    pub ui: UI,
     pub config: Config,
     pub is_running: bool,
-    pub is_showing_help: bool,
-    pub is_in_logs: bool,
-    pub current_line: usize,
     pub logs: Option<SharedJournalLogs>,
     pub services: Option<(Vec<ServiceUnits>, Vec<ServiceUnitFiles>)>,
     pub selected_service: Option<String>,
-    pub selected_priority: Option<u8>,
-    pub selected_service_view: ServiceView,
 }
 
 impl App {
     pub fn new(config: Config) -> Self {
         Self {
+            ui: UI::new(config.clone()),
             config,
-            is_showing_help: false,
             is_running: true,
-            is_in_logs: false,
-            current_line: 0,
             logs: None,
             services: None,
             selected_service: None,
-            selected_priority: Some(4), // default priority level
-            selected_service_view: ServiceView::Units,
         }
     }
 
-    pub fn set_init(&mut self) {
-        self.selected_priority = Some(4);
-        self.is_in_logs = false;
-        self.clear_logs();
-    }
-
-    pub fn set_is_showing_help(&mut self, state: bool) {
-        self.is_showing_help = state;
-    }
-
-    pub fn set_priority(&mut self, priority: u8) {
-        self.selected_priority = Some(priority);
+    pub fn set_is_running(&mut self, state: bool) {
+        self.is_running = state;
     }
 
     pub fn set_services(
@@ -102,14 +77,6 @@ impl App {
     ) -> Result<()> {
         self.services = Some(services);
         Ok(())
-    }
-
-    pub fn set_view(&mut self, new_view: ServiceView) {
-        self.selected_service_view = new_view;
-    }
-
-    pub fn set_current_line(&mut self, position: usize) {
-        self.current_line = position;
     }
 
     pub fn set_logs(&mut self, logs: Arc<Mutex<JournalLogMap>>) {
@@ -151,12 +118,15 @@ async fn run<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> Result<()>
         terminal.draw(|frame| {
             draw_ui(frame, &app).ok();
 
-            // if is looking help -> draw help modal
+            if app.ui.is_showing_help {
+                draw_help_modal(frame).ok();
+            }
         })?;
 
         if let Some(event) = handle_key_events(&mut app) {
             match event {
-                Events::Quit => app.is_running = false,
+                Events::Quit => app.set_is_running(false),
+                Events::GetHelp => app.ui.set_is_showing_help(!app.ui.is_showing_help),
                 Events::GetLogs => {
                     if let Some(service) = &app.selected_service {
                         info!("start getting journals");

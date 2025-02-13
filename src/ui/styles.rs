@@ -4,7 +4,7 @@ use ratatui::{
     widgets::ListItem,
 };
 
-use crate::app::ServiceView;
+use crate::ui::ui::View;
 
 pub const GLOBAL_MARGIN: u16 = 1;
 
@@ -22,15 +22,15 @@ pub fn get_logs_title(priority: &u8) -> String {
     format!("  Logs with priority {}/{}  ", priority, postfix)
 }
 
-pub fn services_title(view: ServiceView) -> Line<'static> {
+pub fn services_title(view: View) -> Line<'static> {
     let active = Style::default()
         .fg(Color::Green)
         .add_modifier(Modifier::BOLD);
     let inactive = Style::default().fg(Color::DarkGray);
 
     let styles = match view {
-        ServiceView::Units => (active, inactive),
-        ServiceView::UnitFiles => (inactive, active),
+        View::ServiceUnits => (active, inactive),
+        View::ServiceUnitFiles => (inactive, active),
     };
 
     Line::from(vec![

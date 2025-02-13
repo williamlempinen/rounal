@@ -17,3 +17,9 @@
 
 [debug_level]
   level = "info"
+
+[options]
+  # include services' description field
+  description = true
+  # yank only the message/info or yank everything - info | full
+  yank = "info"

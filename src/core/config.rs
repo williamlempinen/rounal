@@ -10,7 +10,7 @@ use toml;
 
 use log::{error, LevelFilter};
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct Palette {
     pub red: [u8; 3],
     pub black: [u8; 3],
@@ -19,7 +19,7 @@ pub struct Palette {
     pub gray: [u8; 3],
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct Priority {
     pub emerg: [u8; 3],
     pub alert: [u8; 3],
@@ -31,17 +31,9 @@ pub struct Priority {
     pub unknown: [u8; 3],
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct DebugLevel {
     level: String,
-}
-
-impl Default for DebugLevel {
-    fn default() -> Self {
-        Self {
-            level: "info".to_string(),
-        }
-    }
 }
 
 impl DebugLevel {
@@ -57,7 +49,7 @@ impl DebugLevel {
     }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct Config {
     pub palette: Palette,
     pub priority: Priority,
