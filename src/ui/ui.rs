@@ -221,7 +221,6 @@ pub fn draw_ui(frame: &mut Frame<'_>, app: &mut App) -> Result<()> {
 
     let i_txt = " -- Press [?] for help -- ";
     let i = Paragraph::new(i_txt)
-        .block(Block::bordered())
         .alignment(Alignment::Center)
         .style(Style::default().fg(Color::White));
 
@@ -246,8 +245,8 @@ pub fn draw_help_modal(frame: &mut Frame<'_>) -> Result<()> {
         Select: [Enter]\n\
         Close logs: [c]\n\
         Change priority: [1-7] or [Move]\n\
-        Yank message: y \n\
-        Begin search: / \n\
+        Yank message: [y] \n\
+        Begin search: [/] \n\
         Quit: [q / Esc]\n\
         Toggle Help: [?]\n";
 
