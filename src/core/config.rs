@@ -32,13 +32,17 @@ pub struct Priority {
 }
 
 #[derive(Debug, Deserialize, Clone)]
-pub struct DebugLevel {
-    level: String,
+pub struct Options {
+    pub description: bool,
+    pub yank: String,
+    pub initial_priority: u8,
+    pub debug_level: String,
+    pub command_format: String,
 }
 
-impl DebugLevel {
+impl Options {
     pub fn to_level_filter(&self) -> LevelFilter {
-        match self.level.to_lowercase().as_str() {
+        match self.debug_level.to_lowercase().as_str() {
             "error" => LevelFilter::Error,
             "warn" => LevelFilter::Warn,
             "info" => LevelFilter::Info,
@@ -53,7 +57,7 @@ impl DebugLevel {
 pub struct Config {
     pub palette: Palette,
     pub priority: Priority,
-    pub debug_level: DebugLevel,
+    pub options: Options,
 }
 
 impl Config {

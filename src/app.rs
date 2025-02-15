@@ -6,7 +6,7 @@ use crate::core::{
     system::{get_system_services, ServiceUnitFiles, ServiceUnits},
 };
 
-use crate::ui::ui::{draw_help_modal, draw_ui, UI};
+use crate::ui::ui::{draw_help_modal, draw_ui, draw_whole_line, UI};
 
 use std::{
     io::stdout,
@@ -31,19 +31,22 @@ pub enum Events {
     Quit,
     GetLogs,
     GetHelp,
+    GetLineAsWhole,
     Search,
 }
 
 // TODO:
-//      - scrollbar
-//      - error handling
 //      - yanking
+//      - services/logs highlighted accordingly
 //      - action mode
+//      - responsive layout
+//      - error handling -> no reason to panic every where, i.e. unwrap
 //      - vim-like search
-//      - styled entries for both services and logs
 //      - read custom configs
 //      - filtering based on status (failed | running | exited)
 //      - catch sudo
+//
+//
 
 #[derive(Debug)]
 pub struct App {
@@ -121,12 +124,17 @@ async fn run<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> Result<()>
             if app.ui.is_showing_help {
                 draw_help_modal(frame).ok();
             }
+
+            if app.ui.is_showing_whole {
+                draw_whole_line(frame, &app).ok();
+            }
         })?;
 
         if let Some(event) = handle_key_events(&mut app) {
             match event {
                 Events::Quit => app.set_is_running(false),
                 Events::GetHelp => app.ui.set_is_showing_help(!app.ui.is_showing_help),
+                Events::GetLineAsWhole => app.ui.set_is_showing_whole(!app.ui.is_showing_whole),
                 Events::GetLogs => {
                     if let Some(service) = &app.selected_service {
                         info!("start getting journals");

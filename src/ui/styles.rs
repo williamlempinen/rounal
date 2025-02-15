@@ -36,3 +36,9 @@ pub fn create_list_item(index: usize, current_line: usize, service: String) -> L
     };
     ListItem::new(service).style(style)
 }
+
+pub fn get_logs_style() {}
+
+pub fn get_service_units_style() {}
+
+pub fn get_service_unit_files_style() {}

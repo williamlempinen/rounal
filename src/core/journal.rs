@@ -53,6 +53,8 @@ pub async fn get_journal_logs(service: &str) -> Result<SharedJournalLogs> {
         ))?;
     }
 
+    info!("LOGS: {:?}", logs_for_service);
+
     Ok(logs_for_service)
 }
 
@@ -77,6 +79,11 @@ async fn get_logs(service: String, priority: u8) -> Result<Vec<JournalLog>> {
     }
 
     let stdout = String::from_utf8_lossy(&out.stdout);
+    info!(
+        "RUN THIS: journalctl -u {:?} -r -p {:?}",
+        &service, &priority
+    );
+    info!("STDOUT: {:?}", stdout);
 
     let logs: Vec<JournalLog> = stdout
         .lines()
@@ -84,10 +91,13 @@ async fn get_logs(service: String, priority: u8) -> Result<Vec<JournalLog>> {
         .filter_map(|line| parse_log(line, &priority))
         .collect();
 
+    info!("LOHS THEN: {:?}", logs);
+
     Ok(logs)
 }
 
 fn parse_log(log_line: &str, p: &u8) -> Option<JournalLog> {
+    info!("LOG LINE: {:?}", log_line);
     let parts: Vec<&str> = log_line.split_whitespace().collect();
 
     match p {

@@ -18,20 +18,25 @@ pub fn handle_key_events(app: &mut App) -> Option<Events> {
 }
 
 fn handle_logs_key_events(app: &mut App, key: crossterm::event::KeyEvent) -> Option<Events> {
+    let logs_len = if let Some(logs_arc) = &app.logs {
+        let logs_map = logs_arc.lock().unwrap();
+        logs_map
+            .get(
+                &app.ui
+                    .selected_priority
+                    .unwrap_or(app.config.options.initial_priority),
+            )
+            .map(|logs| logs.len())
+            .unwrap_or(0)
+    } else {
+        0
+    };
+
     match key.code {
         KeyCode::Esc | KeyCode::Char('q') => Some(Events::Quit),
         KeyCode::Char('?') => Some(Events::GetHelp),
+        KeyCode::Char('K') => Some(Events::GetLineAsWhole),
         KeyCode::Down | KeyCode::Char('j') => {
-            let logs_len = if let Some(logs_arc) = &app.logs {
-                let logs_map = logs_arc.lock().unwrap();
-                logs_map
-                    .get(&app.ui.selected_priority.unwrap_or(4))
-                    .map(|logs| logs.len())
-                    .unwrap_or(0)
-            } else {
-                0
-            };
-
             app.ui.move_cursor_down(logs_len);
             None
         }
@@ -75,20 +80,22 @@ fn handle_logs_key_events(app: &mut App, key: crossterm::event::KeyEvent) -> Opt
 }
 
 fn handle_services_key_events(app: &mut App, key: crossterm::event::KeyEvent) -> Option<Events> {
+    let services_len = match &app.services {
+        Some((u, f)) => {
+            if app.ui.view == View::ServiceUnits {
+                u.len()
+            } else {
+                f.len()
+            }
+        }
+        None => 0,
+    };
+
     match key.code {
         KeyCode::Esc | KeyCode::Char('q') => Some(Events::Quit),
         KeyCode::Char('?') => Some(Events::GetHelp),
+        KeyCode::Char('K') => Some(Events::GetLineAsWhole),
         KeyCode::Down | KeyCode::Char('j') => {
-            let services_len = match &app.services {
-                Some((u, f)) => {
-                    if app.ui.view == View::ServiceUnits {
-                        u.len()
-                    } else {
-                        f.len()
-                    }
-                }
-                None => 0,
-            };
             app.ui.move_cursor_down(services_len);
             None
         }

@@ -2,6 +2,8 @@ use crate::app::App;
 
 use crate::core::error::Result;
 
+use crate::core::journal::JournalLog;
+use crate::core::system::{ServiceUnitFiles, ServiceUnits};
 use crate::ui::{
     layouts::center,
     styles::{create_list_item, services_title, GLOBAL_MARGIN},
@@ -13,10 +15,8 @@ use log::info;
 use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
-    widgets::{
-        Block, Clear, List, ListItem, Paragraph, Scrollbar, ScrollbarOrientation, ScrollbarState,
-        Widget,
-    },
+    text::{Line, Span},
+    widgets::{Block, Clear, List, ListItem, Paragraph, Widget},
     Frame,
 };
 
@@ -26,17 +26,21 @@ pub enum View {
     ServiceUnitFiles,
 }
 
+#[derive(Debug, Clone)]
+pub enum CurrentLine {
+    Log(JournalLog),
+    ServiceUnit(ServiceUnits),
+    ServiceUnitFile(ServiceUnitFiles),
+}
+
 #[derive(Debug)]
 pub struct UI {
     pub view: View,
     pub is_showing_help: bool,
+    pub is_showing_whole: bool,
     pub is_in_logs: bool,
     pub selected_priority: Option<u8>,
     pub current_line: usize,
-    pub vertical_scroll_state: ScrollbarState,
-    pub horizontal_scroll_state: ScrollbarState,
-    pub verical_scroll: usize,
-    pub horizontal_scroll: usize,
 }
 
 impl UI {
@@ -44,13 +48,10 @@ impl UI {
         Self {
             view: View::ServiceUnits,
             is_showing_help: false,
+            is_showing_whole: false,
             is_in_logs: false,
             selected_priority: Some(5),
             current_line: 0,
-            vertical_scroll_state: ScrollbarState::new(0),
-            horizontal_scroll_state: ScrollbarState::new(0),
-            verical_scroll: 0,
-            horizontal_scroll: 0,
         }
     }
 
@@ -70,6 +71,10 @@ impl UI {
         self.is_showing_help = state;
     }
 
+    pub fn set_is_showing_whole(&mut self, state: bool) {
+        self.is_showing_whole = state;
+    }
+
     pub fn set_priority(&mut self, priority: u8) {
         self.selected_priority = Some(priority);
         self.current_line = 0;
@@ -79,22 +84,43 @@ impl UI {
         self.current_line = position;
     }
 
-    pub fn update_scrollbar(&mut self, position: usize) {
-        self.vertical_scroll_state = ScrollbarState::new(position);
-    }
-
     pub fn move_cursor_down(&mut self, max: usize) {
         if self.current_line < max.saturating_sub(1) {
             self.current_line += 1;
         }
-        self.update_scrollbar(max);
     }
 
     pub fn move_cursor_up(&mut self) {
         if self.current_line > 0 {
             self.current_line -= 1;
         }
-        self.update_scrollbar(self.current_line);
+    }
+
+    pub fn get_current_line(&self, app: &App) -> Option<CurrentLine> {
+        if self.is_in_logs {
+            return app
+                .logs
+                .as_ref()?
+                .lock()
+                .ok()?
+                .get(self.selected_priority.as_ref()?)?
+                .get(self.current_line)
+                .map(|log| CurrentLine::Log(log.clone()));
+        } else {
+            if let Some((u, f)) = app.services.as_ref() {
+                let service_line = match self.view {
+                    View::ServiceUnits => u
+                        .get(self.current_line)
+                        .map(|unit| CurrentLine::ServiceUnit(unit.clone())),
+                    View::ServiceUnitFiles => f
+                        .get(self.current_line)
+                        .map(|file| CurrentLine::ServiceUnitFile(file.clone())),
+                };
+
+                return service_line;
+            }
+        };
+        None
     }
 }
 
@@ -112,7 +138,7 @@ pub fn draw_ui(frame: &mut Frame<'_>, app: &mut App) -> Result<()> {
     let terminal_layout = Layout::default()
         .margin(GLOBAL_MARGIN)
         .direction(Direction::Vertical)
-        .constraints(&[Constraint::Percentage(95), Constraint::Percentage(5)])
+        .constraints(&[Constraint::Percentage(97), Constraint::Percentage(3)])
         .split(frame.area());
     let content_area = terminal_layout
         .get(0)
@@ -122,6 +148,7 @@ pub fn draw_ui(frame: &mut Frame<'_>, app: &mut App) -> Result<()> {
         .get(1)
         .expect("Error getting instructions")
         .clone();
+    let width = frame.size().width as usize;
 
     let display_lines = frame.area().height.saturating_sub(6) as usize;
     let scroll_offset = if app.ui.current_line >= display_lines - 2 {
@@ -146,7 +173,7 @@ pub fn draw_ui(frame: &mut Frame<'_>, app: &mut App) -> Result<()> {
                     .map(|(idx, log)| {
                         create_list_item(
                             idx,
-                            app.ui.current_line.clone(),
+                            app.ui.current_line,
                             format!("[{}] {} - {}", log.timestamp, log.hostname, log.log_message),
                         )
                     })
@@ -194,7 +221,7 @@ pub fn draw_ui(frame: &mut Frame<'_>, app: &mut App) -> Result<()> {
             None => vec![],
         };
 
-        let items: Vec<ListItem> = services
+        let service_items: Vec<ListItem> = services
             .iter()
             .enumerate()
             .skip(scroll_offset)
@@ -204,7 +231,7 @@ pub fn draw_ui(frame: &mut Frame<'_>, app: &mut App) -> Result<()> {
             })
             .collect();
 
-        let list = List::new(items)
+        let list = List::new(service_items)
             .block(
                 Block::bordered()
                     .title_alignment(Alignment::Center)
@@ -226,14 +253,6 @@ pub fn draw_ui(frame: &mut Frame<'_>, app: &mut App) -> Result<()> {
 
     render_after_clear(frame, action_area, i);
 
-    let scrollbar = Scrollbar::default()
-        .orientation(ScrollbarOrientation::VerticalRight)
-        .begin_symbol(Some("↑"))
-        .end_symbol(Some("↓"))
-        .thumb_symbol("█");
-
-    frame.render_stateful_widget(scrollbar, content_area, &mut app.ui.vertical_scroll_state);
-
     Ok(())
 }
 
@@ -245,6 +264,7 @@ pub fn draw_help_modal(frame: &mut Frame<'_>) -> Result<()> {
         Select: [Enter]\n\
         Close logs: [c]\n\
         Change priority: [1-7] or [Move]\n\
+        See line in a modal: [K]\n\
         Yank message: [y] \n\
         Begin search: [/] \n\
         Quit: [q / Esc]\n\
@@ -263,5 +283,100 @@ pub fn draw_help_modal(frame: &mut Frame<'_>) -> Result<()> {
 
     render_after_clear(frame, area, help_modal);
 
+    Ok(())
+}
+
+pub fn draw_whole_line(frame: &mut Frame<'_>, app: &App) -> Result<()> {
+    let area = center(frame.area(), Constraint::Max(50), Constraint::Max(50));
+
+    let content = if let Some(line) = app.ui.get_current_line(&app) {
+        match line {
+            CurrentLine::Log(log) => {
+                info!("Log: {:?}", log);
+                Line::from(vec![
+                    Span::styled(
+                        format!("\t[{:?}]\n", log.timestamp),
+                        app.config.get_palette_color("red"),
+                    ),
+                    Span::styled(
+                        format!("\t{:?}\n", log.hostname),
+                        app.config.get_palette_color("red"),
+                    ),
+                    Span::styled(
+                        format!("\t{:?}\n", log.service),
+                        app.config.get_palette_color("red"),
+                    ),
+                    Span::styled(
+                        format!("\t{:?}\n", log.priority),
+                        app.config.get_palette_color("red"),
+                    ),
+                    Span::styled(
+                        format!("\tMessage: {:?}", log.log_message),
+                        app.config.get_palette_color("red"),
+                    ),
+                ])
+            }
+            CurrentLine::ServiceUnit(unit) => {
+                info!("Unit: {:?}", unit);
+                Line::from(vec![
+                    Span::styled(
+                        format!("\t{:?}\n", unit.name),
+                        app.config.get_palette_color("green"),
+                    ),
+                    Span::styled(
+                        format!("\t{:?}\n", unit.sub),
+                        app.config.get_palette_color("green"),
+                    ),
+                    Span::styled(
+                        format!("\t{:?}\n", unit.load),
+                        app.config.get_palette_color("green"),
+                    ),
+                    Span::styled(
+                        format!("\t{:?}\n", unit.active),
+                        app.config.get_palette_color("green"),
+                    ),
+                    Span::styled(
+                        format!("\t{:?}\n", unit.description),
+                        app.config.get_palette_color("green"),
+                    ),
+                ])
+            }
+            CurrentLine::ServiceUnitFile(file) => {
+                info!("File: {:?}", file);
+                Line::from(vec![
+                    Span::styled(
+                        format!("\t{:?}\n", file.name),
+                        app.config.get_palette_color("blue"),
+                    ),
+                    Span::styled(
+                        format!("\t{:?\n}", file.state),
+                        app.config.get_palette_color("blue"),
+                    ),
+                    Span::styled(
+                        format!("\t{:?\n}", file.preset),
+                        app.config.get_palette_color("blue"),
+                    ),
+                ])
+            }
+        }
+    } else {
+        Line::from(vec![Span::styled(
+            " No line to present ",
+            app.config.get_palette_color("blue"),
+        )])
+    };
+
+    let line_fully_modal = Paragraph::new(content)
+        .block(
+            Block::bordered().title(" Entry as a whole ").style(
+                Style::default()
+                    .fg(Color::White)
+                    .bg(Color::Black)
+                    .add_modifier(Modifier::BOLD),
+            ),
+        )
+        .alignment(Alignment::Center);
+
+    render_after_clear(frame, area, line_fully_modal);
     Ok(())
 }

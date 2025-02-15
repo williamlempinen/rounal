@@ -12,8 +12,8 @@ use simple_logging::*;
 async fn main() -> Result<()> {
     env::set_var("RUST_BACKTRACE", "1");
 
-    let config = Config::load("src/app_config.toml")?;
-    let _ = log_to_file("debug.log", config.debug_level.to_level_filter());
+    let config = Config::load("app_config.toml")?;
+    let _ = log_to_file("debug.log", config.options.to_level_filter());
 
     info!("CONFIG: {:?}", config);
     info!("Rounal STARTING");
