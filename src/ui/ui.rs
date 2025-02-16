@@ -8,18 +8,20 @@ use crate::core::{
 
 use crate::ui::{
     layouts::center,
-    styles::{create_list_item, services_title, GLOBAL_MARGIN},
+    styles::{
+        create_files_list_item, create_log_list_item, create_units_list_item, services_title,
+        GLOBAL_MARGIN,
+    },
 };
 use crate::util::map_to_priority_str;
 
 use log::info;
 
-use ratatui::widgets::Wrap;
 use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
     text::{Line, Span},
-    widgets::{Block, Clear, List, ListItem, Paragraph, Widget},
+    widgets::{Block, Clear, List, ListItem, Paragraph, Widget, Wrap},
     Frame,
 };
 
@@ -184,11 +186,7 @@ pub fn draw_ui(frame: &mut Frame<'_>, app: &mut App) -> Result<()> {
                     .skip(scroll_offset)
                     .take(display_lines)
                     .map(|(idx, log)| {
-                        create_list_item(
-                            idx,
-                            app.ui.current_line,
-                            format!("[{}] {} - {}", log.timestamp, log.hostname, log.log_message),
-                        )
+                        create_log_list_item(idx, app.ui.current_line, log, &app.config)
                     })
                     .collect()
             } else {
@@ -212,39 +210,34 @@ pub fn draw_ui(frame: &mut Frame<'_>, app: &mut App) -> Result<()> {
 
         render_after_clear(frame, content_area, logs_list);
     } else {
-        let services: Vec<String> = match &app.services {
+        let services: Vec<ListItem> = match &app.services {
             Some((units, unit_files)) => {
                 if app.ui.view == View::ServiceUnits {
                     units
                         .iter()
-                        .map(|u| {
-                            format!(
-                                "{}: {} -- States [{:?} {:?} {:?}]",
-                                u.name, u.description, u.active, u.sub, u.load
-                            )
+                        .enumerate()
+                        .skip(scroll_offset)
+                        .take(display_lines)
+                        .map(|(idx, u)| {
+                            create_units_list_item(idx, app.ui.current_line, u, &config)
                         })
                         .collect()
                 } else {
                     unit_files
                         .iter()
-                        .map(|f| format!("{} {:?} {:?}", f.name, f.state, f.preset))
+                        .enumerate()
+                        .skip(scroll_offset)
+                        .take(display_lines)
+                        .map(|(idx, f)| {
+                            create_files_list_item(idx, app.ui.current_line, f, &config)
+                        })
                         .collect()
                 }
             }
             None => vec![],
         };
 
-        let service_items: Vec<ListItem> = services
-            .iter()
-            .enumerate()
-            .skip(scroll_offset)
-            .take(display_lines)
-            .map(|(idx, service_name)| {
-                create_list_item(idx, app.ui.current_line, service_name.clone())
-            })
-            .collect();
-
-        let list = List::new(service_items)
+        let list = List::new(services)
             .block(
                 Block::bordered()
                     .title_alignment(Alignment::Center)
