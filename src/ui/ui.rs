@@ -127,7 +127,7 @@ impl UI {
         None
     }
 
-    pub fn yank_log_message(&self, app: &App) -> Option<String> {
+    pub fn get_log_message(&self, app: &App) -> Option<String> {
         match self.get_current_line(app) {
             line => match line {
                 Some(CurrentLine::Log(l)) => Some(format!("{:?}", l.log_message)),

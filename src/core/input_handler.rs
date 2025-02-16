@@ -1,8 +1,9 @@
 use crate::app::{App, Events};
 
+use crate::core::clipboard::copy_to_clipboard;
 use crate::ui::ui::View;
 
-use crossterm::event::{self, Event, KeyCode};
+use crossterm::event::{self, Event, KeyCode, KeyEvent};
 
 use log::{info, warn};
 
@@ -17,7 +18,7 @@ pub fn handle_key_events(app: &mut App) -> Option<Events> {
     None
 }
 
-fn handle_logs_key_events(app: &mut App, key: crossterm::event::KeyEvent) -> Option<Events> {
+fn handle_logs_key_events(app: &mut App, key: KeyEvent) -> Option<Events> {
     let logs_len = if let Some(logs_arc) = &app.logs {
         let logs_map = logs_arc.lock().unwrap();
         logs_map
@@ -43,9 +44,15 @@ fn handle_logs_key_events(app: &mut App, key: crossterm::event::KeyEvent) -> Opt
             warn!(
                 "yanked value in logs: {:?}",
                 app.ui
-                    .yank_log_message(&app)
+                    .get_log_message(&app)
                     .unwrap_or("Error yanking command".to_string())
             );
+            copy_to_clipboard(
+                app.ui
+                    .get_log_message(&app)
+                    .unwrap_or("Error yanking log message".to_string()),
+            )
+            .ok();
             None
         }
         _ => {

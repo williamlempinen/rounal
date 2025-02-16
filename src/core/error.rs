@@ -21,4 +21,8 @@ pub enum RounalError {
 
     #[error("Config file error")]
     ConfigurationFileError,
+
+    //no impl yet
+    #[error("Copying to clipboard error")]
+    ClipboardError,
 }
