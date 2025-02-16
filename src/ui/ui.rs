@@ -23,6 +23,7 @@ use ratatui::{
     Frame,
 };
 
+// logs view could be added here
 #[derive(Debug, Clone, PartialEq)]
 pub enum View {
     ServiceUnits,
@@ -124,6 +125,15 @@ impl UI {
             }
         };
         None
+    }
+
+    pub fn yank_log_message(&self, app: &App) -> Option<String> {
+        match self.get_current_line(app) {
+            line => match line {
+                Some(CurrentLine::Log(l)) => Some(format!("{:?}", l.log_message)),
+                _ => None,
+            },
+        }
     }
 }
 

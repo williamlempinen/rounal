@@ -4,7 +4,7 @@ use crate::ui::ui::View;
 
 use crossterm::event::{self, Event, KeyCode};
 
-use log::info;
+use log::{info, warn};
 
 pub fn handle_key_events(app: &mut App) -> Option<Events> {
     if let Event::Key(key) = event::read().expect("Error keyboard input") {
@@ -40,6 +40,12 @@ fn handle_logs_key_events(app: &mut App, key: crossterm::event::KeyEvent) -> Opt
         KeyCode::Char('K') => Some(Events::GetLineInModal),
         KeyCode::Char('y') => {
             info!("i want to yank this");
+            warn!(
+                "yanked value in logs: {:?}",
+                app.ui
+                    .yank_log_message(&app)
+                    .unwrap_or("Error yanking command".to_string())
+            );
             None
         }
         _ => {
@@ -107,10 +113,6 @@ fn handle_services_key_events(app: &mut App, key: crossterm::event::KeyEvent) ->
         KeyCode::Esc | KeyCode::Char('q') => Some(Events::Quit),
         KeyCode::Char('?') => Some(Events::GetHelp),
         KeyCode::Char('K') => Some(Events::GetLineInModal),
-        KeyCode::Char('y') => {
-            info!("i want to yank this");
-            None
-        }
         _ => {
             if allow_actions {
                 match key.code {
