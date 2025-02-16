@@ -31,7 +31,7 @@ pub enum Events {
     Quit,
     GetLogs,
     GetHelp,
-    GetLineAsWhole,
+    GetLineInModal,
     Search,
 }
 
@@ -125,7 +125,7 @@ async fn run<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> Result<()>
                 draw_help_modal(frame).ok();
             }
 
-            if app.ui.is_showing_whole {
+            if app.ui.is_showing_line_in_modal {
                 draw_whole_line(frame, &app).ok();
             }
         })?;
@@ -134,7 +134,7 @@ async fn run<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> Result<()>
             match event {
                 Events::Quit => app.set_is_running(false),
                 Events::GetHelp => app.ui.set_is_showing_help(!app.ui.is_showing_help),
-                Events::GetLineAsWhole => app.ui.set_is_showing_whole(!app.ui.is_showing_whole),
+                Events::GetLineInModal => app.ui.set_is_showing_line_in_modal(!app.ui.is_showing_line_in_modal),
                 Events::GetLogs => {
                     if let Some(service) = &app.selected_service {
                         info!("start getting journals");

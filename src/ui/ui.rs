@@ -1,9 +1,11 @@
 use crate::app::App;
 
-use crate::core::error::Result;
+use crate::core::{
+    error::Result,
+    journal::JournalLog,
+    system::{ServiceUnitFiles, ServiceUnits},
+};
 
-use crate::core::journal::JournalLog;
-use crate::core::system::{ServiceUnitFiles, ServiceUnits};
 use crate::ui::{
     layouts::center,
     styles::{create_list_item, services_title, GLOBAL_MARGIN},
@@ -12,6 +14,7 @@ use crate::util::map_to_priority_str;
 
 use log::info;
 
+use ratatui::widgets::Wrap;
 use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
@@ -37,7 +40,7 @@ pub enum CurrentLine {
 pub struct UI {
     pub view: View,
     pub is_showing_help: bool,
-    pub is_showing_whole: bool,
+    pub is_showing_line_in_modal: bool,
     pub is_in_logs: bool,
     pub selected_priority: Option<u8>,
     pub current_line: usize,
@@ -48,7 +51,7 @@ impl UI {
         Self {
             view: View::ServiceUnits,
             is_showing_help: false,
-            is_showing_whole: false,
+            is_showing_line_in_modal: false,
             is_in_logs: false,
             selected_priority: Some(5),
             current_line: 0,
@@ -71,8 +74,8 @@ impl UI {
         self.is_showing_help = state;
     }
 
-    pub fn set_is_showing_whole(&mut self, state: bool) {
-        self.is_showing_whole = state;
+    pub fn set_is_showing_line_in_modal(&mut self, state: bool) {
+        self.is_showing_line_in_modal = state;
     }
 
     pub fn set_priority(&mut self, priority: u8) {
@@ -287,86 +290,83 @@ pub fn draw_help_modal(frame: &mut Frame<'_>) -> Result<()> {
 }
 
 pub fn draw_whole_line(frame: &mut Frame<'_>, app: &App) -> Result<()> {
-    let area = center(frame.area(), Constraint::Max(50), Constraint::Max(50));
+    let area = center(frame.area(), Constraint::Max(70), Constraint::Max(50));
 
-    let content = if let Some(line) = app.ui.get_current_line(&app) {
+    let content: Vec<Line> = if let Some(line) = app.ui.get_current_line(&app) {
         match line {
             CurrentLine::Log(log) => {
                 info!("Log: {:?}", log);
-                Line::from(vec![
-                    Span::styled(
-                        format!("\t[{:?}]\n", log.timestamp),
-                        app.config.get_palette_color("red"),
-                    ),
-                    Span::styled(
-                        format!("\t{:?}\n", log.hostname),
-                        app.config.get_palette_color("red"),
-                    ),
-                    Span::styled(
-                        format!("\t{:?}\n", log.service),
-                        app.config.get_palette_color("red"),
-                    ),
-                    Span::styled(
-                        format!("\t{:?}\n", log.priority),
-                        app.config.get_palette_color("red"),
-                    ),
-                    Span::styled(
-                        format!("\tMessage: {:?}", log.log_message),
-                        app.config.get_palette_color("red"),
-                    ),
-                ])
+                vec![
+                    Line::from(Span::styled(
+                        format!("\t[{:?}]\n\n", log.timestamp),
+                        Style::default().fg(app.config.get_palette_color("red")),
+                    )),
+                    Line::from(Span::styled(
+                        format!("Host: {:?}\n\n", log.hostname),
+                        Style::default().fg(app.config.get_palette_color("red")),
+                    )),
+                    Line::from(Span::styled(
+                        format!("Service: {:?}\n\n", log.service),
+                        Style::default().fg(app.config.get_palette_color("red")),
+                    )),
+                    Line::from(Span::styled(
+                        format!("Message: {:?}", log.log_message),
+                        Style::default().fg(app.config.get_palette_color("red")),
+                    )),
+                ]
             }
             CurrentLine::ServiceUnit(unit) => {
                 info!("Unit: {:?}", unit);
-                Line::from(vec![
-                    Span::styled(
-                        format!("\t{:?}\n", unit.name),
-                        app.config.get_palette_color("green"),
-                    ),
-                    Span::styled(
-                        format!("\t{:?}\n", unit.sub),
-                        app.config.get_palette_color("green"),
-                    ),
-                    Span::styled(
-                        format!("\t{:?}\n", unit.load),
-                        app.config.get_palette_color("green"),
-                    ),
-                    Span::styled(
-                        format!("\t{:?}\n", unit.active),
-                        app.config.get_palette_color("green"),
-                    ),
-                    Span::styled(
-                        format!("\t{:?}\n", unit.description),
-                        app.config.get_palette_color("green"),
-                    ),
-                ])
+                vec![
+                    Line::from(Span::styled(
+                        format!("\t{:?}", unit.name),
+                        Style::default().fg(app.config.get_palette_color("green")),
+                    )),
+                    Line::from(Span::styled(
+                        format!("\t{:?}", unit.sub),
+                        Style::default().fg(app.config.get_palette_color("green")),
+                    )),
+                    Line::from(Span::styled(
+                        format!("\t{:?}", unit.load),
+                        Style::default().fg(app.config.get_palette_color("green")),
+                    )),
+                    Line::from(Span::styled(
+                        format!("\t{:?}", unit.active),
+                        Style::default().fg(app.config.get_palette_color("green")),
+                    )),
+                    Line::from(Span::styled(
+                        format!("\t{:?}", unit.description),
+                        Style::default().fg(app.config.get_palette_color("green")),
+                    )),
+                ]
             }
             CurrentLine::ServiceUnitFile(file) => {
                 info!("File: {:?}", file);
-                Line::from(vec![
-                    Span::styled(
-                        format!("\t{:?}\n", file.name),
-                        app.config.get_palette_color("blue"),
-                    ),
-                    Span::styled(
-                        format!("\t{:?\n}", file.state),
-                        app.config.get_palette_color("blue"),
-                    ),
-                    Span::styled(
-                        format!("\t{:?\n}", file.preset),
-                        app.config.get_palette_color("blue"),
-                    ),
-                ])
+                vec![
+                    Line::from(Span::styled(
+                        format!("\t{:?}", file.name),
+                        Style::default().fg(app.config.get_palette_color("blue")),
+                    )),
+                    Line::from(Span::styled(
+                        format!("\t{:?}", file.state),
+                        Style::default().fg(app.config.get_palette_color("blue")),
+                    )),
+                    Line::from(Span::styled(
+                        format!("\t{:?}", file.preset),
+                        Style::default().fg(app.config.get_palette_color("blue")),
+                    )),
+                ]
             }
         }
     } else {
-        Line::from(vec![Span::styled(
+        vec![Line::from(Span::styled(
             " No line to present ",
-            app.config.get_palette_color("blue"),
-        )])
+            Style::default().fg(app.config.get_palette_color("blue")),
+        ))]
     };
 
     let line_fully_modal = Paragraph::new(content)
+        .wrap(Wrap { trim: true })
         .block(
             Block::bordered().title(" Entry as a whole ").style(
                 Style::default()
@@ -375,7 +375,7 @@ pub fn draw_whole_line(frame: &mut Frame<'_>, app: &App) -> Result<()> {
                     .add_modifier(Modifier::BOLD),
             ),
         )
-        .alignment(Alignment::Center);
+        .alignment(Alignment::Left);
 
     render_after_clear(frame, area, line_fully_modal);
     Ok(())
