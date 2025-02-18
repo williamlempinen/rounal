@@ -13,6 +13,8 @@ use crate::{
     ui::ui::View,
 };
 
+use super::ui::CurrentLine;
+
 pub const GLOBAL_MARGIN: u16 = 1;
 pub const CURSOR_LEFT: &str = "▶";
 pub const CURSOR_RIGHT: &str = "◀";
@@ -158,3 +160,5 @@ pub fn create_units_list_item(
         ),
     ])))
 }
+
+//pub fn highlighted_line(line: &CurrentLine) -> ListItem<'static> {}

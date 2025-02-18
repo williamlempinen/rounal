@@ -89,6 +89,8 @@ impl App {
     pub fn clear_logs(&mut self) {
         self.logs = None;
     }
+
+    pub fn highlight_reorder_lines(&mut self, search_params: &str) {}
 }
 
 pub async fn start_application(config: Config) -> Result<()> {
@@ -134,7 +136,9 @@ async fn run<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> Result<()>
             match event {
                 Events::Quit => app.set_is_running(false),
                 Events::GetHelp => app.ui.set_is_showing_help(!app.ui.is_showing_help),
-                Events::GetLineInModal => app.ui.set_is_showing_line_in_modal(!app.ui.is_showing_line_in_modal),
+                Events::GetLineInModal => app
+                    .ui
+                    .set_is_showing_line_in_modal(!app.ui.is_showing_line_in_modal),
                 Events::GetLogs => {
                     if let Some(service) = &app.selected_service {
                         info!("start getting journals");
