@@ -146,7 +146,7 @@ fn render_after_clear<T: Widget>(f: &mut Frame<'_>, clearable: Rect, w: T) {
 
 // handle the result/error
 pub fn draw_ui(frame: &mut Frame<'_>, app: &mut App) -> Result<()> {
-    info!("ENTER DRAW_UI");
+    //info!("ENTER DRAW_UI");
 
     let config = app.config.clone();
 

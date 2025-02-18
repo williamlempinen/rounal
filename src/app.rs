@@ -36,13 +36,14 @@ pub enum Events {
 }
 
 // TODO:
-//      - yanking
+//      - yanking -> clipboard content destroyed after exiting application
 //      - services/logs highlighted accordingly
 //      - action mode
 //      - responsive layout
 //      - error handling -> no reason to panic every where, i.e. unwrap
 //      - vim-like search
 //      - read custom configs
+//      - upgrade package xcb to > 1.0 -> use arbroad crate for clipboard management
 //      - filtering based on status (failed | running | exited)
 //      - catch sudo
 //
@@ -102,11 +103,11 @@ pub async fn start_application(config: Config) -> Result<()> {
 
         let mut app = App::new(config);
         let services = get_system_services().await?;
-        info!("GOT SERVICES");
+        //info!("GOT SERVICES");
         app.set_services(services)?;
-        info!("SET SERVICES");
+        //info!("SET SERVICES");
 
-        info!("CALL RUN");
+        //info!("CALL RUN");
         run(&mut terminal, app).await?;
     }
 
@@ -134,7 +135,9 @@ async fn run<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> Result<()>
             match event {
                 Events::Quit => app.set_is_running(false),
                 Events::GetHelp => app.ui.set_is_showing_help(!app.ui.is_showing_help),
-                Events::GetLineInModal => app.ui.set_is_showing_line_in_modal(!app.ui.is_showing_line_in_modal),
+                Events::GetLineInModal => app
+                    .ui
+                    .set_is_showing_line_in_modal(!app.ui.is_showing_line_in_modal),
                 Events::GetLogs => {
                     if let Some(service) = &app.selected_service {
                         info!("start getting journals");
@@ -143,7 +146,7 @@ async fn run<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> Result<()>
                         info!("journals set to app");
                     }
                 }
-                _ => info!("nothing for key events"),
+                _ => {}
             }
         }
     }

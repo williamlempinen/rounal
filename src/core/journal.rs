@@ -1,8 +1,9 @@
-use log::info;
+use log::{error, info};
 
 use std::{
     collections::HashMap,
     sync::{Arc, Mutex},
+    thread::JoinHandle,
 };
 
 use tokio::{process::Command, sync::mpsc};
@@ -33,33 +34,41 @@ pub async fn get_journal_logs(service: &str) -> Result<SharedJournalLogs> {
         let thread_service = service.to_string();
         let thread_sender = sender.clone();
 
-        tokio::task::spawn(async move {
+        tokio::spawn(async move {
             info!("Spawned with {}", p);
 
             let logs = get_logs(thread_service, p)
                 .await
                 .expect("Error getting logs for: {service} with priority: {p}");
 
-            thread_logs.lock().unwrap().insert(p, logs);
+            thread_logs
+                .lock()
+                .map_err(|e| RounalError::JournalCtlError(format!("{:?}", e)))
+                .ok()
+                .map(|mut logs_map| logs_map.insert(p, logs));
             info!("Done");
-            thread_sender.send(()).await.unwrap();
+
+            if let Err(e) = thread_sender.send(()).await {
+                error!("Error in thread sender: {:?}", e);
+            }
         });
     }
 
     for x in 1..=7 {
-        info!("Receiver with {}", x);
-        receiver.recv().await.ok_or(RounalError::UnexpectedError(
-            "Error receiving logs".to_string(),
-        ))?;
+        if receiver.recv().await.is_none() {
+            return Err(RounalError::UnexpectedError(format!(
+                "Error receiving logs for priority {}",
+                x
+            )));
+        }
     }
 
     info!("LOGS: {:?}", logs_for_service);
-
     Ok(logs_for_service)
 }
 
 async fn get_logs(service: String, priority: u8) -> Result<Vec<JournalLog>> {
-    info!("get_logs with {} {}", service, priority);
+    //info!("get_logs with {} {}", service, priority);
     let out = Command::new("sudo")
         .arg("journalctl")
         .arg("-u")
@@ -79,11 +88,11 @@ async fn get_logs(service: String, priority: u8) -> Result<Vec<JournalLog>> {
     }
 
     let stdout = String::from_utf8_lossy(&out.stdout);
-    info!(
-        "RUN THIS: journalctl -u {:?} -r -p {:?}",
-        &service, &priority
-    );
-    info!("STDOUT: {:?}", stdout);
+    //info!(
+    //    "RUN THIS: journalctl -u {:?} -r -p {:?}",
+    //    &service, &priority
+    //);
+    //info!("STDOUT: {:?}", stdout);
 
     let logs: Vec<JournalLog> = stdout
         .lines()
@@ -91,18 +100,18 @@ async fn get_logs(service: String, priority: u8) -> Result<Vec<JournalLog>> {
         .filter_map(|line| parse_log(line, &priority))
         .collect();
 
-    info!("LOHS THEN: {:?}", logs);
+    //info!("LOHS THEN: {:?}", logs);
 
     Ok(logs)
 }
 
 fn parse_log(log_line: &str, p: &u8) -> Option<JournalLog> {
-    info!("LOG LINE: {:?}", log_line);
+    //info!("LOG LINE: {:?}", log_line);
     let parts: Vec<&str> = log_line.split_whitespace().collect();
 
     match p {
         1..=7 => {
-            info!("Found entry with priority of {}", p);
+            //info!("Found entry with priority of {}", p);
             let priority = p.clone();
             let timestamp = parts.get(..3)?.join(" ");
             let hostname = parts.get(3)?.to_string();
