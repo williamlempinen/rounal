@@ -43,11 +43,9 @@ pub enum Events {
 //      - error handling -> no reason to panic every where, i.e. unwrap
 //      - vim-like search
 //      - read custom configs
-//      - upgrade package xcb to > 1.0 -> use arbroad crate for clipboard management
+//      - upgrade package xcb to > 1.0 -> use arboard crate for clipboard management
 //      - filtering based on status (failed | running | exited)
 //      - catch sudo
-//
-//
 
 #[derive(Debug)]
 pub struct App {

@@ -136,18 +136,14 @@ pub struct ServiceUnitFiles {
 }
 
 pub async fn get_system_services() -> Result<(Vec<ServiceUnits>, Vec<ServiceUnitFiles>)> {
-    let units = tokio::spawn(get_list_units());
-    let unit_files = tokio::spawn(get_list_unit_files());
-
-    let units = units
-        .await
-        .map_err(|e| RounalError::SystemCtlError(format!("Failed to spawn units task: {}", e)))??;
-
-    let unit_files = unit_files.await.map_err(|e| {
-        RounalError::SystemCtlError(format!("Failed to spawn unit files task: {}", e))
-    })??;
-
-    Ok((units, unit_files))
+    Ok((
+        tokio::spawn(get_list_units())
+            .await
+            .map_err(|e| RounalError::SystemCtlError(format!("{:?}", e)))??,
+        tokio::spawn(get_list_unit_files())
+            .await
+            .map_err(|e| RounalError::SystemCtlError(format!("{:?}", e)))??,
+    ))
 }
 
 pub async fn get_list_units() -> Result<Vec<ServiceUnits>> {
