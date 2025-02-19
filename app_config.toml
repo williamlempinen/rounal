@@ -1,5 +1,7 @@
-### color customization
-# palette and priority holds color values in rgb format
+##########################################################
+## COLOR CUSTOMIZATIONS
+## USE RBG FORMAT
+##########################################################
 
 [palette]
 red = [255, 0, 0]
@@ -7,6 +9,7 @@ black = [0, 0, 0]
 blue = [0, 0, 255]
 white = [255, 255, 255]
 gray = [128, 128, 128]
+green = [0, 185, 80]
 
 [priority]
 emerg = [211, 10, 39]

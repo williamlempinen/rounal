@@ -6,24 +6,20 @@ use crate::core::{
     system::{ServiceUnitFiles, ServiceUnits},
 };
 
-use crate::ui::{
-    layouts::center,
-    styles::{
-        create_files_list_item, create_log_list_item, create_units_list_item, services_title,
-        GLOBAL_MARGIN,
-    },
-};
+use crate::ui::{layouts::center, styles::GLOBAL_MARGIN};
 use crate::util::map_to_priority_str;
 
 use log::info;
 
 use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
-    style::{Color, Modifier, Style},
+    style::{Modifier, Style},
     text::{Line, Span},
     widgets::{Block, Clear, List, ListItem, Paragraph, Widget, Wrap},
     Frame,
 };
+
+use super::styles::Styler;
 
 // logs view could be added here
 #[derive(Debug, Clone, PartialEq)]
@@ -145,11 +141,7 @@ fn render_after_clear<T: Widget>(f: &mut Frame<'_>, clearable: Rect, w: T) {
 }
 
 // handle the result/error
-pub fn draw_ui(frame: &mut Frame<'_>, app: &mut App) -> Result<()> {
-    //info!("ENTER DRAW_UI");
-
-    let config = app.config.clone();
-
+pub fn draw_ui(frame: &mut Frame<'_>, app: &App, styler: &Styler) -> Result<()> {
     let terminal_layout = Layout::default()
         .margin(GLOBAL_MARGIN)
         .direction(Direction::Vertical)
@@ -175,7 +167,7 @@ pub fn draw_ui(frame: &mut Frame<'_>, app: &mut App) -> Result<()> {
     if app.ui.is_in_logs {
         let priority = &app.ui.selected_priority.unwrap_or_default();
         let priority_str = map_to_priority_str(priority);
-        let priority_style = Style::default().fg(config.get_priority_color(&priority_str));
+        let priority_style = Style::default().fg(styler.config.get_priority_color(&priority_str));
 
         let logs_items: Vec<ListItem> = if let Some(logs_arc) = &app.logs {
             let logs_map = logs_arc.lock().unwrap();
@@ -185,9 +177,7 @@ pub fn draw_ui(frame: &mut Frame<'_>, app: &mut App) -> Result<()> {
                     .enumerate()
                     .skip(scroll_offset)
                     .take(display_lines)
-                    .map(|(idx, log)| {
-                        create_log_list_item(idx, app.ui.current_line, log, &app.config)
-                    })
+                    .map(|(idx, log)| styler.create_log_list_item(idx, app.ui.current_line, log))
                     .collect()
             } else {
                 vec![ListItem::new("No logs available").style(priority_style)]
@@ -218,9 +208,7 @@ pub fn draw_ui(frame: &mut Frame<'_>, app: &mut App) -> Result<()> {
                         .enumerate()
                         .skip(scroll_offset)
                         .take(display_lines)
-                        .map(|(idx, u)| {
-                            create_units_list_item(idx, app.ui.current_line, u, &config)
-                        })
+                        .map(|(idx, u)| styler.create_units_list_item(idx, app.ui.current_line, u))
                         .collect()
                 } else {
                     unit_files
@@ -228,9 +216,7 @@ pub fn draw_ui(frame: &mut Frame<'_>, app: &mut App) -> Result<()> {
                         .enumerate()
                         .skip(scroll_offset)
                         .take(display_lines)
-                        .map(|(idx, f)| {
-                            create_files_list_item(idx, app.ui.current_line, f, &config)
-                        })
+                        .map(|(idx, f)| styler.create_files_list_item(idx, app.ui.current_line, f))
                         .collect()
                 }
             }
@@ -241,11 +227,11 @@ pub fn draw_ui(frame: &mut Frame<'_>, app: &mut App) -> Result<()> {
             .block(
                 Block::bordered()
                     .title_alignment(Alignment::Center)
-                    .title(services_title(app.ui.view.clone())),
+                    .title(styler.get_services_title(app.ui.view.clone())),
             )
             .style(
                 Style::default()
-                    .fg(Color::Green)
+                    .fg(styler.config.get_palette_color("green"))
                     .add_modifier(Modifier::BOLD),
             );
 
@@ -255,14 +241,14 @@ pub fn draw_ui(frame: &mut Frame<'_>, app: &mut App) -> Result<()> {
     let i_txt = " -- Press [?] for help -- ";
     let i = Paragraph::new(i_txt)
         .alignment(Alignment::Center)
-        .style(Style::default().fg(Color::White));
+        .style(Style::default().fg(styler.config.get_palette_color("white")));
 
     render_after_clear(frame, action_area, i);
 
     Ok(())
 }
 
-pub fn draw_help_modal(frame: &mut Frame<'_>) -> Result<()> {
+pub fn draw_help_modal(frame: &mut Frame<'_>, styler: &Styler) -> Result<()> {
     let area = center(frame.area(), Constraint::Max(40), Constraint::Max(20));
 
     let help_text = "Rounal - Key Mappings\n\n\
@@ -280,8 +266,8 @@ pub fn draw_help_modal(frame: &mut Frame<'_>) -> Result<()> {
         .block(
             Block::bordered().title(" Help ").style(
                 Style::default()
-                    .fg(Color::White)
-                    .bg(Color::Black)
+                    .fg(styler.config.get_palette_color("white"))
+                    .bg(styler.config.get_palette_color("black"))
                     .add_modifier(Modifier::BOLD),
             ),
         )
@@ -292,7 +278,7 @@ pub fn draw_help_modal(frame: &mut Frame<'_>) -> Result<()> {
     Ok(())
 }
 
-pub fn draw_whole_line(frame: &mut Frame<'_>, app: &App) -> Result<()> {
+pub fn draw_whole_line(frame: &mut Frame<'_>, app: &App, styler: &Styler) -> Result<()> {
     let area = center(frame.area(), Constraint::Max(70), Constraint::Max(50));
 
     let content: Vec<Line> = if let Some(line) = app.ui.get_current_line(&app) {
@@ -302,19 +288,19 @@ pub fn draw_whole_line(frame: &mut Frame<'_>, app: &App) -> Result<()> {
                 vec![
                     Line::from(Span::styled(
                         format!("\t[{:?}]\n\n", log.timestamp),
-                        Style::default().fg(app.config.get_palette_color("red")),
+                        Style::default().fg(styler.config.get_palette_color("red")),
                     )),
                     Line::from(Span::styled(
                         format!("Host: {:?}\n\n", log.hostname),
-                        Style::default().fg(app.config.get_palette_color("red")),
+                        Style::default().fg(styler.config.get_palette_color("red")),
                     )),
                     Line::from(Span::styled(
                         format!("Service: {:?}\n\n", log.service),
-                        Style::default().fg(app.config.get_palette_color("red")),
+                        Style::default().fg(styler.config.get_palette_color("red")),
                     )),
                     Line::from(Span::styled(
                         format!("Message: {:?}", log.log_message),
-                        Style::default().fg(app.config.get_palette_color("red")),
+                        Style::default().fg(styler.config.get_palette_color("red")),
                     )),
                 ]
             }
@@ -323,23 +309,23 @@ pub fn draw_whole_line(frame: &mut Frame<'_>, app: &App) -> Result<()> {
                 vec![
                     Line::from(Span::styled(
                         format!("\t{:?}", unit.name),
-                        Style::default().fg(app.config.get_palette_color("green")),
+                        Style::default().fg(styler.config.get_palette_color("green")),
                     )),
                     Line::from(Span::styled(
                         format!("\t{:?}", unit.sub),
-                        Style::default().fg(app.config.get_palette_color("green")),
+                        Style::default().fg(styler.config.get_palette_color("green")),
                     )),
                     Line::from(Span::styled(
                         format!("\t{:?}", unit.load),
-                        Style::default().fg(app.config.get_palette_color("green")),
+                        Style::default().fg(styler.config.get_palette_color("green")),
                     )),
                     Line::from(Span::styled(
                         format!("\t{:?}", unit.active),
-                        Style::default().fg(app.config.get_palette_color("green")),
+                        Style::default().fg(styler.config.get_palette_color("green")),
                     )),
                     Line::from(Span::styled(
                         format!("\t{:?}", unit.description),
-                        Style::default().fg(app.config.get_palette_color("green")),
+                        Style::default().fg(styler.config.get_palette_color("green")),
                     )),
                 ]
             }
@@ -348,15 +334,15 @@ pub fn draw_whole_line(frame: &mut Frame<'_>, app: &App) -> Result<()> {
                 vec![
                     Line::from(Span::styled(
                         format!("\t{:?}", file.name),
-                        Style::default().fg(app.config.get_palette_color("blue")),
+                        Style::default().fg(styler.config.get_palette_color("blue")),
                     )),
                     Line::from(Span::styled(
                         format!("\t{:?}", file.state),
-                        Style::default().fg(app.config.get_palette_color("blue")),
+                        Style::default().fg(styler.config.get_palette_color("blue")),
                     )),
                     Line::from(Span::styled(
                         format!("\t{:?}", file.preset),
-                        Style::default().fg(app.config.get_palette_color("blue")),
+                        Style::default().fg(styler.config.get_palette_color("blue")),
                     )),
                 ]
             }
@@ -364,7 +350,7 @@ pub fn draw_whole_line(frame: &mut Frame<'_>, app: &App) -> Result<()> {
     } else {
         vec![Line::from(Span::styled(
             " No line to present ",
-            Style::default().fg(app.config.get_palette_color("blue")),
+            Style::default().fg(styler.config.get_palette_color("blue")),
         ))]
     };
 
@@ -373,8 +359,8 @@ pub fn draw_whole_line(frame: &mut Frame<'_>, app: &App) -> Result<()> {
         .block(
             Block::bordered().title(" Entry as a whole ").style(
                 Style::default()
-                    .fg(Color::White)
-                    .bg(Color::Black)
+                    .fg(styler.config.get_palette_color("white"))
+                    .bg(styler.config.get_palette_color("black"))
                     .add_modifier(Modifier::BOLD),
             ),
         )

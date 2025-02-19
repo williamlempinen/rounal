@@ -1,9 +1,12 @@
-use crate::core::{
-    config::Config,
-    error::{Result, RounalError},
-    input_handler::handle_key_events,
-    journal::{get_journal_logs, JournalLogMap, SharedJournalLogs},
-    system::{get_system_services, ServiceUnitFiles, ServiceUnits},
+use crate::{
+    core::{
+        config::Config,
+        error::{Result, RounalError},
+        input_handler::handle_key_events,
+        journal::{get_journal_logs, JournalLogMap, SharedJournalLogs},
+        system::{get_system_services, ServiceUnitFiles, ServiceUnits},
+    },
+    ui::styles::Styler,
 };
 
 use crate::ui::ui::{draw_help_modal, draw_ui, draw_whole_line, UI};
@@ -99,14 +102,12 @@ pub async fn start_application(config: Config) -> Result<()> {
         let backend = CrosstermBackend::new(&mut stdout);
         let mut terminal = Terminal::new(backend).map_err(RounalError::TerminalError)?;
 
+        let styler = Styler::new(&config);
         let mut app = App::new(config);
         let services = get_system_services().await?;
-        //info!("GOT SERVICES");
         app.set_services(services)?;
-        //info!("SET SERVICES");
 
-        //info!("CALL RUN");
-        run(&mut terminal, app).await?;
+        run(&mut terminal, app, styler).await?;
     }
 
     disable_raw_mode()?;
@@ -115,17 +116,17 @@ pub async fn start_application(config: Config) -> Result<()> {
     Ok(())
 }
 
-async fn run<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> Result<()> {
+async fn run<B: Backend>(terminal: &mut Terminal<B>, mut app: App, styler: Styler) -> Result<()> {
     while app.is_running {
         terminal.draw(|frame| {
-            draw_ui(frame, &mut app).ok();
+            draw_ui(frame, &app, &styler).ok();
 
             if app.ui.is_showing_help {
-                draw_help_modal(frame).ok();
+                draw_help_modal(frame, &styler).ok();
             }
 
             if app.ui.is_showing_line_in_modal {
-                draw_whole_line(frame, &app).ok();
+                draw_whole_line(frame, &app, &styler).ok();
             }
         })?;
 
