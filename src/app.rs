@@ -91,6 +91,8 @@ impl App {
     pub fn clear_logs(&mut self) {
         self.logs = None;
     }
+
+    pub fn highlight_reorder_lines(&mut self, search_params: &str) {}
 }
 
 pub async fn start_application(config: Config) -> Result<()> {

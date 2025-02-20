@@ -1,5 +1,5 @@
 use ratatui::{
-    style::{Color, Modifier, Style},
+    style::{Modifier, Style},
     text::{Line, Span, Text},
     widgets::ListItem,
 };
@@ -170,3 +170,5 @@ impl Styler {
         ])))
     }
 }
+
+//pub fn highlighted_line(line: &CurrentLine) -> ListItem<'static> {}
