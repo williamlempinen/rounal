@@ -1,12 +1,8 @@
-use rounal::core::{config::Config, error::Result};
-
-use std::env;
-
-use rounal::app;
-
 use log::{error, info};
-
+use rounal::app;
+use rounal::core::{config::Config, error::Result};
 use simple_logging::*;
+use std::env;
 
 #[tokio::main]
 async fn main() -> Result<()> {

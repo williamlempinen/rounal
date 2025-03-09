@@ -1,9 +1,6 @@
-use log::info;
-
 use crate::core::error::{Result, RounalError};
-
 use arboard::Clipboard;
-
+use log::info;
 use std::thread::sleep;
 use std::time::Duration;
 

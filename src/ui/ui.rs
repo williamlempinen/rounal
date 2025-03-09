@@ -1,16 +1,13 @@
+use super::styles::Styler;
 use crate::app::App;
-
 use crate::core::{
     error::Result,
     journal::JournalLog,
     system::{ServiceUnitFiles, ServiceUnits},
 };
-
 use crate::ui::{layouts::center, styles::GLOBAL_MARGIN};
 use crate::util::map_to_priority_str;
-
 use log::info;
-
 use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Modifier, Style},
@@ -18,8 +15,6 @@ use ratatui::{
     widgets::{Block, Clear, List, ListItem, Paragraph, Widget, Wrap},
     Frame,
 };
-
-use super::styles::Styler;
 
 // logs view could be added here
 #[derive(Debug, Clone, PartialEq)]
@@ -41,6 +36,9 @@ pub struct UI {
     pub is_showing_help: bool,
     pub is_showing_line_in_modal: bool,
     pub is_in_logs: bool,
+    pub is_in_search_mode: bool,
+    pub search_query: String,
+    pub search_matches: Vec<CurrentLine>,
     pub selected_priority: Option<u8>,
     pub current_line: usize,
 }
@@ -52,6 +50,9 @@ impl UI {
             is_showing_help: false,
             is_showing_line_in_modal: false,
             is_in_logs: false,
+            is_in_search_mode: false,
+            search_query: "".to_string(),
+            search_matches: vec![],
             selected_priority: Some(5),
             current_line: 0,
         }
@@ -75,6 +76,10 @@ impl UI {
 
     pub fn set_is_showing_line_in_modal(&mut self, state: bool) {
         self.is_showing_line_in_modal = state;
+    }
+
+    pub fn set_is_in_search_mode(&mut self, state: bool) {
+        self.is_in_search_mode = state;
     }
 
     pub fn set_priority(&mut self, priority: u8) {
@@ -155,7 +160,6 @@ pub fn draw_ui(frame: &mut Frame<'_>, app: &App, styler: &Styler) -> Result<()> 
         .get(1)
         .expect("Error getting instructions")
         .clone();
-    let width = frame.size().width as usize;
 
     let display_lines = frame.area().height.saturating_sub(6) as usize;
     let scroll_offset = if app.ui.current_line >= display_lines - 2 {
@@ -163,6 +167,10 @@ pub fn draw_ui(frame: &mut Frame<'_>, app: &App, styler: &Styler) -> Result<()> 
     } else {
         0
     };
+
+    if app.ui.is_in_search_mode && app.ui.search_query.len() > 1 {
+        info!("In search mode and query with: {}", app.ui.search_query);
+    }
 
     if app.ui.is_in_logs {
         let priority = &app.ui.selected_priority.unwrap_or_default();
@@ -238,12 +246,9 @@ pub fn draw_ui(frame: &mut Frame<'_>, app: &App, styler: &Styler) -> Result<()> 
         render_after_clear(frame, content_area, list);
     }
 
-    let i_txt = " -- Press [?] for help -- ";
-    let i = Paragraph::new(i_txt)
-        .alignment(Alignment::Center)
-        .style(Style::default().fg(styler.config.get_palette_color("white")));
+    let bottom_area = styler.get_bottom_info(&app.ui);
 
-    render_after_clear(frame, action_area, i);
+    render_after_clear(frame, action_area, bottom_area);
 
     Ok(())
 }
@@ -259,6 +264,7 @@ pub fn draw_help_modal(frame: &mut Frame<'_>, styler: &Styler) -> Result<()> {
         See line in a modal: [K]\n\
         Yank message: [y] \n\
         Begin search: [/] \n\
+        Exit search mode: [Esc] \n\
         Quit: [q / Esc]\n\
         Toggle Help: [?]\n";
 

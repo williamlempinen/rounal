@@ -1,9 +1,3 @@
-use ratatui::{
-    style::{Modifier, Style},
-    text::{Line, Span, Text},
-    widgets::ListItem,
-};
-
 use crate::{
     core::{
         config::Config,
@@ -12,6 +6,14 @@ use crate::{
     },
     ui::ui::View,
 };
+use ratatui::{
+    layout::Alignment,
+    style::{Modifier, Style},
+    text::{Line, Span, Text},
+    widgets::{ListItem, Paragraph},
+};
+
+use super::ui::UI;
 
 pub(crate) const GLOBAL_MARGIN: u16 = 1;
 pub(crate) const CURSOR_LEFT: &str = "▶";
@@ -26,6 +28,18 @@ impl Styler {
     pub fn new(config: &Config) -> Self {
         Self {
             config: config.clone(),
+        }
+    }
+
+    pub(crate) fn get_bottom_info(&self, ui: &UI) -> Paragraph<'static> {
+        if ui.is_in_search_mode {
+            return Paragraph::new(format!(" -- SEARCH MODE: {}", ui.search_query))
+                .alignment(Alignment::Left)
+                .style(Style::default().fg(self.config.get_palette_color("blue")));
+        } else {
+            return Paragraph::new(" -- Press [?] for help -- ")
+                .alignment(Alignment::Center)
+                .style(Style::default().fg(self.config.get_palette_color("white")));
         }
     }
 

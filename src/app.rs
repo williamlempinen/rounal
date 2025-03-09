@@ -1,3 +1,4 @@
+use crate::ui::ui::{draw_help_modal, draw_ui, draw_whole_line, View, UI};
 use crate::{
     core::{
         config::Config,
@@ -8,24 +9,18 @@ use crate::{
     },
     ui::styles::Styler,
 };
-
-use crate::ui::ui::{draw_help_modal, draw_ui, draw_whole_line, UI};
-
-use std::{
-    io::stdout,
-    sync::{Arc, Mutex},
-};
-
 use crossterm::{
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
     ExecutableCommand,
 };
-
 use log::info;
-
 use ratatui::{
     backend::{Backend, CrosstermBackend},
     Terminal,
+};
+use std::{
+    io::stdout,
+    sync::{Arc, Mutex},
 };
 
 // TODO
@@ -44,7 +39,6 @@ pub enum Events {
 //      - action mode
 //      - responsive layout
 //      - error handling -> no reason to panic every where, i.e. unwrap
-//      - vim-like search
 //      - read custom configs
 //      - upgrade package xcb to > 1.0 -> use arboard crate for clipboard management
 //      - filtering based on status (failed | running | exited)
@@ -92,7 +86,71 @@ impl App {
         self.logs = None;
     }
 
-    pub fn highlight_reorder_lines(&mut self, search_params: &str) {}
+    pub fn highlight_and_reorder_lines(&mut self) {
+        if self.ui.search_query.trim().is_empty() {
+            return;
+        }
+
+        let q = self.ui.search_query.to_lowercase();
+
+        if self.ui.is_in_logs {
+            if let Some(logs_arc) = &self.logs {
+                if let Ok(mut logs_map) = logs_arc.lock() {
+                    let priority = self
+                        .ui
+                        .selected_priority
+                        .unwrap_or(self.config.options.initial_priority);
+
+                    if let Some(entries) = logs_map.get_mut(&priority) {
+                        entries.sort_by_key(|entry| {
+                            let line = format!(
+                                "{} {} {} {}",
+                                entry.timestamp.to_lowercase(),
+                                entry.hostname.to_lowercase(),
+                                entry.service.to_lowercase(),
+                                entry.log_message.to_lowercase()
+                            );
+
+                            if line.contains(&q) {
+                                0
+                            } else {
+                                1
+                            }
+                        });
+                    }
+                }
+            }
+        } else {
+            if let Some((units, files)) = &mut self.services {
+                match self.ui.view {
+                    View::ServiceUnits => {
+                        units.sort_by_key(|u| {
+                            let name_desc = format!(
+                                "{} {}",
+                                u.name.to_lowercase(),
+                                u.description.to_lowercase()
+                            );
+                            if name_desc.contains(&q) {
+                                0
+                            } else {
+                                1
+                            }
+                        });
+                    }
+                    View::ServiceUnitFiles => {
+                        files.sort_by_key(|f| {
+                            if f.name.to_lowercase().contains(&q) {
+                                0
+                            } else {
+                                1
+                            }
+                        });
+                    }
+                }
+            }
+        }
+        self.ui.set_current_line(0);
+    }
 }
 
 pub async fn start_application(config: Config) -> Result<()> {
@@ -135,6 +193,7 @@ async fn run<B: Backend>(terminal: &mut Terminal<B>, mut app: App, styler: Style
         if let Some(event) = handle_key_events(&mut app) {
             match event {
                 Events::Quit => app.set_is_running(false),
+                Events::Search => app.ui.set_is_in_search_mode(true),
                 Events::GetHelp => app.ui.set_is_showing_help(!app.ui.is_showing_help),
                 Events::GetLineInModal => app
                     .ui
@@ -147,7 +206,6 @@ async fn run<B: Backend>(terminal: &mut Terminal<B>, mut app: App, styler: Style
                         info!("journals set to app");
                     }
                 }
-                _ => {}
             }
         }
     }

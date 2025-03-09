@@ -1,14 +1,11 @@
+use crate::core::error::{Result, RounalError};
 use log::{error, info};
-
 use std::{
     collections::HashMap,
     sync::{Arc, Mutex},
     thread,
 };
-
 use tokio::{process::Command, sync::mpsc};
-
-use crate::core::error::{Result, RounalError};
 
 #[derive(Debug, Clone)]
 pub struct JournalLog {

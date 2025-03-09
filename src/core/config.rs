@@ -1,14 +1,9 @@
 use crate::core::error::{Result, RounalError};
-
-use ratatui::style::Color;
-
-use serde::Deserialize;
-
-use std::{fs, path::Path};
-
-use toml;
-
 use log::{error, LevelFilter};
+use ratatui::style::Color;
+use serde::Deserialize;
+use std::{fs, path::Path};
+use toml;
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct Palette {

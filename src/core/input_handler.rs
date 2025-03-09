@@ -1,21 +1,51 @@
 use crate::app::{App, Events};
-
 use crate::core::clipboard::copy_to_clipboard;
 use crate::ui::ui::View;
-
 use crossterm::event::{self, Event, KeyCode, KeyEvent};
-
 use log::info;
 
 pub fn handle_key_events(app: &mut App) -> Option<Events> {
     if let Event::Key(key) = event::read().expect("Error keyboard input") {
         if app.ui.is_in_logs {
+            if app.ui.is_in_search_mode {
+                return handle_search_key_events(app, key);
+            }
+
             return handle_logs_key_events(app, key);
-        } else {
-            return handle_services_key_events(app, key);
         }
+
+        if app.ui.is_in_search_mode {
+            return handle_search_key_events(app, key);
+        }
+
+        return handle_services_key_events(app, key);
     }
     None
+}
+
+fn handle_search_key_events(app: &mut App, key: KeyEvent) -> Option<Events> {
+    match key.code {
+        KeyCode::Esc => {
+            app.ui.is_in_search_mode = false;
+            app.ui.search_matches.clear();
+            app.ui.search_query.clear();
+            None
+        }
+        KeyCode::Backspace => {
+            app.ui.search_query.pop();
+            None
+        }
+        KeyCode::Char(any) => {
+            app.ui.search_query.push(any);
+            None
+        }
+        KeyCode::Enter => {
+            app.ui.is_in_search_mode = false;
+            app.highlight_and_reorder_lines();
+            None
+        }
+        _ => None,
+    }
 }
 
 fn handle_logs_key_events(app: &mut App, key: KeyEvent) -> Option<Events> {
@@ -33,12 +63,14 @@ fn handle_logs_key_events(app: &mut App, key: KeyEvent) -> Option<Events> {
         0
     };
 
-    let allow_actions = !app.ui.is_showing_line_in_modal && !app.ui.is_showing_help;
+    let allow_actions =
+        !app.ui.is_showing_line_in_modal && !app.ui.is_showing_help && !app.ui.is_in_search_mode;
 
     match key.code {
         KeyCode::Esc | KeyCode::Char('q') => Some(Events::Quit),
         KeyCode::Char('?') => Some(Events::GetHelp),
         KeyCode::Char('K') => Some(Events::GetLineInModal),
+        KeyCode::Char('/') => Some(Events::Search),
         KeyCode::Char('y') => {
             copy_to_clipboard(
                 app.ui
@@ -107,11 +139,13 @@ fn handle_services_key_events(app: &mut App, key: crossterm::event::KeyEvent) ->
         None => 0,
     };
 
-    let allow_actions = !app.ui.is_showing_line_in_modal && !app.ui.is_showing_help;
+    let allow_actions =
+        !app.ui.is_showing_line_in_modal && !app.ui.is_showing_help && !app.ui.is_in_search_mode;
 
     match key.code {
         KeyCode::Esc | KeyCode::Char('q') => Some(Events::Quit),
         KeyCode::Char('?') => Some(Events::GetHelp),
+        KeyCode::Char('/') => Some(Events::Search),
         KeyCode::Char('K') => Some(Events::GetLineInModal),
         _ => {
             if allow_actions {
