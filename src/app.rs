@@ -103,13 +103,13 @@ impl App {
 
                     if let Some(entries) = logs_map.get_mut(&priority) {
                         entries.sort_by_key(|entry| {
-                            let line = format!(
+                            let time_service = format!(
                                 "{} {}",
                                 entry.timestamp.to_lowercase(),
                                 entry.service.to_lowercase(),
                             );
 
-                            if line.contains(&q) {
+                            if time_service.contains(&q) {
                                 0
                             } else {
                                 1
