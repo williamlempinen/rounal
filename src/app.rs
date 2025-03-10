@@ -104,11 +104,9 @@ impl App {
                     if let Some(entries) = logs_map.get_mut(&priority) {
                         entries.sort_by_key(|entry| {
                             let line = format!(
-                                "{} {} {} {}",
+                                "{} {}",
                                 entry.timestamp.to_lowercase(),
-                                entry.hostname.to_lowercase(),
                                 entry.service.to_lowercase(),
-                                entry.log_message.to_lowercase()
                             );
 
                             if line.contains(&q) {
