@@ -1,11 +1,15 @@
+use super::ui::UI;
 use crate::{
     core::{
         config::Config,
         journal::JournalLog,
-        system::{ServiceUnitFiles, ServiceUnits, State},
+        system::{ServiceUnitFiles, ServiceUnits},
     },
     ui::ui::View,
-    util::{get_active_color_str, get_load_color_str, get_sub_color_str},
+    util::{
+        get_active_color_str, get_load_color_str, get_preset_color_str, get_state_color_str,
+        get_sub_color_str,
+    },
 };
 use ratatui::{
     layout::Alignment,
@@ -13,9 +17,6 @@ use ratatui::{
     text::{Line, Span, Text},
     widgets::{ListItem, Paragraph},
 };
-use toml::to_string;
-
-use super::ui::UI;
 
 pub(crate) const GLOBAL_MARGIN: u16 = 1;
 pub(crate) const CURSOR_LEFT: &str = "▶";
@@ -77,9 +78,21 @@ impl Styler {
                 Style::default().fg(self.config.get_palette_color("blue")),
             ),
             Span::styled(
-                format!("[{}] ", log.timestamp),
+                "[".to_string(),
                 Style::default()
-                    .fg(self.config.get_palette_color("gray"))
+                    .fg(self.config.get_palette_color("yellow"))
+                    .add_modifier(Modifier::BOLD),
+            ),
+            Span::styled(
+                format!("{}", log.timestamp),
+                Style::default()
+                    .fg(self.config.get_palette_color("white"))
+                    .add_modifier(Modifier::BOLD),
+            ),
+            Span::styled(
+                "] ".to_string(),
+                Style::default()
+                    .fg(self.config.get_palette_color("yellow"))
                     .add_modifier(Modifier::BOLD),
             ),
             Span::styled(
@@ -93,12 +106,12 @@ impl Styler {
                     .add_modifier(Modifier::BOLD),
             ),
             Span::styled(
-                format!("[{}] ", log.priority),
-                Style::default().fg(self.config.get_priority_color(&log.priority.to_string())),
+                "Message: ".to_string(),
+                Style::default().fg(self.config.get_palette_color("white")),
             ),
             Span::styled(
-                format!("Message: {}", log.log_message),
-                Style::default().fg(self.config.get_palette_color("red")),
+                format!("{}", log.log_message),
+                Style::default().fg(self.config.get_palette_color("gray")),
             ),
             Span::styled(
                 if is_on_cursor { CURSOR_RIGHT } else { " " }.to_string(),
@@ -107,28 +120,6 @@ impl Styler {
         ])))
     }
 
-    //#[derive(Debug, Clone)]
-    //pub enum State {
-    //    Enabled,
-    //    Disabled,
-    //    Static,
-    //    Masked,
-    //    Alias,
-    //    Indirect,
-    //    Generated,
-    //    EnabledRuntime,
-    //    Transient,
-    //    Unknown,
-    //}
-
-    //#[derive(Debug, Clone)]
-    //pub enum Preset {
-    //    Enabled,
-    //    Disabled,
-    //    Empty,
-    //    Unknown,
-    //}
-
     pub(crate) fn create_files_list_item(
         &self,
         index: usize,
@@ -136,6 +127,8 @@ impl Styler {
         file: &ServiceUnitFiles,
     ) -> ListItem<'static> {
         let is_on_cursor = index == current_line;
+        let state_c = get_state_color_str(&file.state);
+        let preset_c = get_preset_color_str(&file.preset);
 
         ListItem::from(Text::from(Line::from(vec![
             Span::styled(
@@ -143,19 +136,31 @@ impl Styler {
                 Style::default().fg(self.config.get_palette_color("blue")),
             ),
             Span::styled(
-                format!("[{}] ", file.name),
+                "[".to_string(),
+                Style::default()
+                    .fg(self.config.get_palette_color("yellow"))
+                    .add_modifier(Modifier::BOLD),
+            ),
+            Span::styled(
+                format!("{}", file.name),
                 Style::default()
                     .fg(self.config.get_palette_color("white"))
                     .add_modifier(Modifier::BOLD),
             ),
             Span::styled(
+                "] ".to_string(),
+                Style::default()
+                    .fg(self.config.get_palette_color("yellow"))
+                    .add_modifier(Modifier::BOLD),
+            ),
+            Span::styled(
                 format!("{:?} ", file.state),
-                Style::default().fg(self.config.get_palette_color("blue")),
+                Style::default().fg(self.config.get_palette_color(state_c)),
             ),
             Span::styled(
                 format!("{:?} ", file.preset),
                 Style::default()
-                    .fg(self.config.get_palette_color("green"))
+                    .fg(self.config.get_palette_color(preset_c))
                     .add_modifier(Modifier::BOLD),
             ),
             Span::styled(
@@ -194,7 +199,7 @@ impl Styler {
                     .add_modifier(Modifier::BOLD),
             ),
             Span::styled(
-                "]".to_string(),
+                "] ".to_string(),
                 Style::default()
                     .fg(self.config.get_palette_color("yellow"))
                     .add_modifier(Modifier::BOLD),
@@ -210,7 +215,7 @@ impl Styler {
                     .add_modifier(Modifier::BOLD),
             ),
             Span::styled(
-                format!("[{:?}] ", unit.sub),
+                format!("{:?} ", unit.sub),
                 Style::default().fg(self.config.get_palette_color(sub_c)),
             ),
             Span::styled(
@@ -228,5 +233,3 @@ impl Styler {
         ])))
     }
 }
-
-//pub fn highlighted_line(line: &CurrentLine) -> ListItem<'static> {}

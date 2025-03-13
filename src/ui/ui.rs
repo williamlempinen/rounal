@@ -160,17 +160,12 @@ pub fn draw_ui(frame: &mut Frame<'_>, app: &App, styler: &Styler) -> Result<()> 
         .get(1)
         .expect("Error getting instructions")
         .clone();
-
     let display_lines = frame.area().height.saturating_sub(6) as usize;
     let scroll_offset = if app.ui.current_line >= display_lines - 2 {
         app.ui.current_line - (display_lines - 3)
     } else {
         0
     };
-
-    if app.ui.is_in_search_mode && app.ui.search_query.len() > 1 {
-        info!("In search mode and query with: {}", app.ui.search_query);
-    }
 
     if app.ui.is_in_logs {
         let priority = &app.ui.selected_priority.unwrap_or_default();
@@ -199,8 +194,10 @@ pub fn draw_ui(frame: &mut Frame<'_>, app: &App, styler: &Styler) -> Result<()> 
                 Block::bordered()
                     .title_alignment(Alignment::Center)
                     .title(format!(
-                        "  Logs with priority {}/{}  ",
-                        priority, priority_str
+                        "  {} -- {}/{}  ",
+                        app.selected_service.as_deref().unwrap_or("Logs"),
+                        priority,
+                        priority_str
                     ))
                     .style(priority_style),
             )
@@ -247,7 +244,6 @@ pub fn draw_ui(frame: &mut Frame<'_>, app: &App, styler: &Styler) -> Result<()> 
     }
 
     let bottom_area = styler.get_bottom_info(&app.ui);
-
     render_after_clear(frame, action_area, bottom_area);
 
     Ok(())
