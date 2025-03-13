@@ -289,7 +289,7 @@ pub fn draw_help_modal(frame: &mut Frame<'_>, styler: &Styler) -> Result<()> {
     Ok(())
 }
 
-pub fn draw_whole_line(frame: &mut Frame<'_>, app: &App, styler: &Styler) -> Result<()> {
+pub fn draw_entry_line(frame: &mut Frame<'_>, app: &App, styler: &Styler) -> Result<()> {
     let area = center(frame.area(), Constraint::Max(70), Constraint::Max(20));
 
     let content: Vec<Line> = if let Some(line) = app.ui.get_current_line(&app) {
@@ -453,5 +453,9 @@ pub fn draw_whole_line(frame: &mut Frame<'_>, app: &App, styler: &Styler) -> Res
         .alignment(Alignment::Left);
 
     render_after_clear(frame, area, entry_modal);
+    Ok(())
+}
+
+pub fn draw_explanations_modal(frame: &mut Frame<'_>, app: &App, styler: &Styler) -> Result<()> {
     Ok(())
 }

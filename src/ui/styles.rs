@@ -19,8 +19,6 @@ use ratatui::{
 };
 
 pub(crate) const GLOBAL_MARGIN: u16 = 1;
-pub(crate) const CURSOR_LEFT: &str = "▶";
-pub(crate) const CURSOR_RIGHT: &str = "◀";
 
 #[derive(Debug)]
 pub struct Styler {

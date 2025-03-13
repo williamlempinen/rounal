@@ -1,4 +1,4 @@
-use crate::ui::ui::{draw_help_modal, draw_ui, draw_whole_line, View, UI};
+use crate::ui::ui::{draw_entry_line, draw_help_modal, draw_ui, View, UI};
 use crate::{
     core::{
         config::Config,
@@ -36,6 +36,7 @@ pub enum Events {
 // TODO:
 //      - yanking -> clipboard content destroyed after exiting application
 //      - action mode
+//      - explanations modal
 //      - responsive layout
 //      - error handling -> no reason to panic every time
 //      - upgrade package xcb to > 1.0 -> use arboard crate for clipboard management
@@ -183,7 +184,7 @@ async fn run<B: Backend>(terminal: &mut Terminal<B>, mut app: App, styler: Style
             }
 
             if app.ui.is_showing_line_in_modal {
-                draw_whole_line(frame, &app, &styler).ok();
+                draw_entry_line(frame, &app, &styler).ok();
             }
         })?;
 
