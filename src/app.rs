@@ -35,14 +35,11 @@ pub enum Events {
 
 // TODO:
 //      - yanking -> clipboard content destroyed after exiting application
-//      - services/logs highlighted accordingly
 //      - action mode
 //      - responsive layout
-//      - error handling -> no reason to panic every where, i.e. unwrap
-//      - read custom configs
+//      - error handling -> no reason to panic every time
 //      - upgrade package xcb to > 1.0 -> use arboard crate for clipboard management
 //      - filtering based on status (failed | running | exited)
-//      - catch sudo
 
 #[derive(Debug)]
 pub struct App {
