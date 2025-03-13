@@ -186,13 +186,19 @@ pub fn draw_ui(frame: &mut Frame<'_>, app: &App, styler: &Styler) -> Result<()> 
                     .map(|(idx, log)| styler.create_log_list_item(idx, app.ui.current_line, log))
                     .collect()
             } else {
-                vec![ListItem::new("No logs available").style(priority_style)]
+                vec![]
             }
         } else {
-            vec![ListItem::new("No logs available").style(priority_style)]
+            vec![]
         };
 
-        let logs_list = List::new(logs_items)
+        let final_items = if logs_items.len() < 1 {
+            vec![ListItem::new("No log entries").style(priority_style)]
+        } else {
+            logs_items
+        };
+
+        let logs_list = List::new(final_items)
             .block(
                 Block::bordered()
                     .title_alignment(Alignment::Center)

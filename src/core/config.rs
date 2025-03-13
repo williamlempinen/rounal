@@ -35,6 +35,8 @@ pub struct Options {
     pub initial_priority: u8,
     pub debug_level: String,
     pub command_format: String,
+    pub cursor_left: String,
+    pub cursor_right: String,
 }
 
 impl Options {

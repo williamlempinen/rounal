@@ -33,3 +33,6 @@ initial_priority = 5
 debug_level = "info"
 # are you using sudo in your system - sudo
 command_format = "sudo"
+# cursors
+cursor_left = "▶"
+cursor_right = "◀"

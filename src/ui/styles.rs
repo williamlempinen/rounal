@@ -74,7 +74,12 @@ impl Styler {
 
         ListItem::from(Text::from(Line::from(vec![
             Span::styled(
-                if is_on_cursor { CURSOR_LEFT } else { " " }.to_string(),
+                if is_on_cursor {
+                    &self.config.options.cursor_left
+                } else {
+                    " "
+                }
+                .to_string(),
                 Style::default().fg(self.config.get_palette_color("blue")),
             ),
             Span::styled(
@@ -114,7 +119,12 @@ impl Styler {
                 Style::default().fg(self.config.get_palette_color("gray")),
             ),
             Span::styled(
-                if is_on_cursor { CURSOR_RIGHT } else { " " }.to_string(),
+                if is_on_cursor {
+                    &self.config.options.cursor_right
+                } else {
+                    " "
+                }
+                .to_string(),
                 Style::default().fg(self.config.get_palette_color("blue")),
             ),
         ])))
@@ -132,7 +142,12 @@ impl Styler {
 
         ListItem::from(Text::from(Line::from(vec![
             Span::styled(
-                if is_on_cursor { CURSOR_LEFT } else { " " }.to_string(),
+                if is_on_cursor {
+                    &self.config.options.cursor_left
+                } else {
+                    " "
+                }
+                .to_string(),
                 Style::default().fg(self.config.get_palette_color("blue")),
             ),
             Span::styled(
@@ -164,7 +179,12 @@ impl Styler {
                     .add_modifier(Modifier::BOLD),
             ),
             Span::styled(
-                if is_on_cursor { CURSOR_RIGHT } else { " " }.to_string(),
+                if is_on_cursor {
+                    &self.config.options.cursor_right
+                } else {
+                    " "
+                }
+                .to_string(),
                 Style::default().fg(self.config.get_palette_color("blue")),
             ),
         ])))
@@ -183,7 +203,12 @@ impl Styler {
 
         ListItem::from(Text::from(Line::from(vec![
             Span::styled(
-                if is_on_cursor { CURSOR_LEFT } else { " " }.to_string(),
+                if is_on_cursor {
+                    &self.config.options.cursor_left
+                } else {
+                    " "
+                }
+                .to_string(),
                 Style::default().fg(self.config.get_palette_color("blue")),
             ),
             Span::styled(
@@ -227,7 +252,12 @@ impl Styler {
                 Style::default().fg(self.config.get_palette_color("gray")),
             ),
             Span::styled(
-                if is_on_cursor { CURSOR_RIGHT } else { " " }.to_string(),
+                if is_on_cursor {
+                    &self.config.options.cursor_right
+                } else {
+                    " "
+                }
+                .to_string(),
                 Style::default().fg(self.config.get_palette_color("blue")),
             ),
         ])))
