@@ -175,7 +175,7 @@ pub fn draw_ui(frame: &mut Frame<'_>, app: &App, styler: &Styler) -> Result<()> 
     if app.ui.is_in_logs {
         let priority = &app.ui.selected_priority.unwrap_or_default();
         let priority_str = map_to_priority_str(priority);
-        let priority_style = Style::default().fg(styler.config.get_priority_color(&priority_str));
+        let priority_style = Style::default().fg(styler.config.get_priority_color(priority_str));
 
         let logs_items: Vec<ListItem> = if let Some(logs_arc) = &app.logs {
             let logs_map = logs_arc.lock().unwrap();

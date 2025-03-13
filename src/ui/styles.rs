@@ -2,9 +2,10 @@ use crate::{
     core::{
         config::Config,
         journal::JournalLog,
-        system::{ServiceUnitFiles, ServiceUnits},
+        system::{ServiceUnitFiles, ServiceUnits, State},
     },
     ui::ui::View,
+    util::{get_active_color_str, get_load_color_str, get_sub_color_str},
 };
 use ratatui::{
     layout::Alignment,
@@ -12,6 +13,7 @@ use ratatui::{
     text::{Line, Span, Text},
     widgets::{ListItem, Paragraph},
 };
+use toml::to_string;
 
 use super::ui::UI;
 
@@ -53,6 +55,7 @@ impl Styler {
             View::ServiceUnits => (active, inactive),
             View::ServiceUnitFiles => (inactive, active),
         };
+
         Line::from(vec![
             Span::styled(" Service units ", styles.0),
             Span::raw(" / "),
@@ -104,6 +107,28 @@ impl Styler {
         ])))
     }
 
+    //#[derive(Debug, Clone)]
+    //pub enum State {
+    //    Enabled,
+    //    Disabled,
+    //    Static,
+    //    Masked,
+    //    Alias,
+    //    Indirect,
+    //    Generated,
+    //    EnabledRuntime,
+    //    Transient,
+    //    Unknown,
+    //}
+
+    //#[derive(Debug, Clone)]
+    //pub enum Preset {
+    //    Enabled,
+    //    Disabled,
+    //    Empty,
+    //    Unknown,
+    //}
+
     pub(crate) fn create_files_list_item(
         &self,
         index: usize,
@@ -120,7 +145,7 @@ impl Styler {
             Span::styled(
                 format!("[{}] ", file.name),
                 Style::default()
-                    .fg(self.config.get_palette_color("gray"))
+                    .fg(self.config.get_palette_color("white"))
                     .add_modifier(Modifier::BOLD),
             ),
             Span::styled(
@@ -147,6 +172,9 @@ impl Styler {
         unit: &ServiceUnits,
     ) -> ListItem<'static> {
         let is_on_cursor = index == current_line;
+        let load_c = get_load_color_str(&unit.load);
+        let active_c = get_active_color_str(&unit.active);
+        let sub_c = get_sub_color_str(&unit.sub);
 
         ListItem::from(Text::from(Line::from(vec![
             Span::styled(
@@ -154,28 +182,44 @@ impl Styler {
                 Style::default().fg(self.config.get_palette_color("blue")),
             ),
             Span::styled(
-                format!("[{}] ", unit.name),
+                "[".to_string(),
                 Style::default()
-                    .fg(self.config.get_palette_color("gray"))
+                    .fg(self.config.get_palette_color("yellow"))
+                    .add_modifier(Modifier::BOLD),
+            ),
+            Span::styled(
+                format!("{}", unit.name),
+                Style::default()
+                    .fg(self.config.get_palette_color("white"))
+                    .add_modifier(Modifier::BOLD),
+            ),
+            Span::styled(
+                "]".to_string(),
+                Style::default()
+                    .fg(self.config.get_palette_color("yellow"))
                     .add_modifier(Modifier::BOLD),
             ),
             Span::styled(
                 format!("{:?} ", unit.load),
-                Style::default().fg(self.config.get_palette_color("blue")),
+                Style::default().fg(self.config.get_palette_color(load_c)),
             ),
             Span::styled(
                 format!("{:?} ", unit.active),
                 Style::default()
-                    .fg(self.config.get_palette_color("green"))
+                    .fg(self.config.get_palette_color(active_c))
                     .add_modifier(Modifier::BOLD),
             ),
             Span::styled(
                 format!("[{:?}] ", unit.sub),
-                Style::default().fg(self.config.get_palette_color("red")),
+                Style::default().fg(self.config.get_palette_color(sub_c)),
             ),
             Span::styled(
-                format!("Message: {}", unit.description),
-                Style::default().fg(self.config.get_palette_color("red")),
+                "Message: ".to_string(),
+                Style::default().fg(self.config.get_palette_color("white")),
+            ),
+            Span::styled(
+                format!("{}", unit.description),
+                Style::default().fg(self.config.get_palette_color("gray")),
             ),
             Span::styled(
                 if is_on_cursor { CURSOR_RIGHT } else { " " }.to_string(),

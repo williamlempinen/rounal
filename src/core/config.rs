@@ -13,6 +13,7 @@ pub struct Palette {
     pub white: [u8; 3],
     pub gray: [u8; 3],
     pub green: [u8; 3],
+    pub yellow: [u8; 3],
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -109,6 +110,11 @@ impl Config {
                 self.palette.green[0],
                 self.palette.green[1],
                 self.palette.green[2],
+            ),
+            "yellow" => Color::Rgb(
+                self.palette.yellow[0],
+                self.palette.yellow[1],
+                self.palette.yellow[2],
             ),
             _ => Color::White,
         }
