@@ -6,7 +6,10 @@ use crate::core::{
     system::{ServiceUnitFiles, ServiceUnits},
 };
 use crate::ui::{layouts::center, styles::GLOBAL_MARGIN};
-use crate::util::map_to_priority_str;
+use crate::util::{
+    get_active_color_str, get_load_color_str, get_preset_color_str, get_state_color_str,
+    get_sub_color_str, map_to_priority_str,
+};
 use log::info;
 use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
@@ -281,71 +284,146 @@ pub fn draw_help_modal(frame: &mut Frame<'_>, styler: &Styler) -> Result<()> {
 }
 
 pub fn draw_whole_line(frame: &mut Frame<'_>, app: &App, styler: &Styler) -> Result<()> {
-    let area = center(frame.area(), Constraint::Max(70), Constraint::Max(50));
+    let area = center(frame.area(), Constraint::Max(70), Constraint::Max(20));
 
     let content: Vec<Line> = if let Some(line) = app.ui.get_current_line(&app) {
         match line {
             CurrentLine::Log(log) => {
                 info!("Log: {:?}", log);
                 vec![
-                    Line::from(Span::styled(
-                        format!("\t[{:?}]\n\n", log.timestamp),
-                        Style::default().fg(styler.config.get_palette_color("red")),
-                    )),
+                    Line::from(vec![
+                        Span::styled(
+                            "[".to_string(),
+                            Style::default().fg(styler.config.get_palette_color("yellow")),
+                        ),
+                        Span::styled(
+                            format!("{:?}", log.timestamp),
+                            Style::default().fg(styler.config.get_palette_color("white")),
+                        ),
+                        Span::styled(
+                            "]\n\n".to_string(),
+                            Style::default().fg(styler.config.get_palette_color("yellow")),
+                        ),
+                    ]),
                     Line::from(Span::styled(
                         format!("Host: {:?}\n\n", log.hostname),
-                        Style::default().fg(styler.config.get_palette_color("red")),
+                        Style::default().fg(styler.config.get_palette_color("blue")),
                     )),
                     Line::from(Span::styled(
                         format!("Service: {:?}\n\n", log.service),
-                        Style::default().fg(styler.config.get_palette_color("red")),
+                        Style::default().fg(styler.config.get_palette_color("green")),
                     )),
                     Line::from(Span::styled(
-                        format!("Message: {:?}", log.log_message),
-                        Style::default().fg(styler.config.get_palette_color("red")),
+                        "Message:\n\n".to_string(),
+                        Style::default().fg(styler.config.get_palette_color("white")),
+                    )),
+                    Line::from(Span::styled(
+                        format!("{:?}", log.log_message),
+                        Style::default().fg(styler.config.get_palette_color("gray")),
                     )),
                 ]
             }
             CurrentLine::ServiceUnit(unit) => {
                 info!("Unit: {:?}", unit);
+                let sub_c = get_sub_color_str(&unit.sub);
+                let load_c = get_load_color_str(&unit.load);
+                let active_c = get_active_color_str(&unit.active);
+
                 vec![
+                    Line::from(vec![
+                        Span::styled(
+                            "[".to_string(),
+                            Style::default().fg(styler.config.get_palette_color("yellow")),
+                        ),
+                        Span::styled(
+                            format!("{:?}", unit.name),
+                            Style::default().fg(styler.config.get_palette_color("white")),
+                        ),
+                        Span::styled(
+                            "]\n\n".to_string(),
+                            Style::default().fg(styler.config.get_palette_color("yellow")),
+                        ),
+                    ]),
+                    Line::from(vec![
+                        Span::styled(
+                            "Sub: ".to_string(),
+                            Style::default().fg(styler.config.get_palette_color("white")),
+                        ),
+                        Span::styled(
+                            format!("{:?}\n\n", unit.sub),
+                            Style::default().fg(styler.config.get_palette_color(sub_c)),
+                        ),
+                    ]),
+                    Line::from(vec![
+                        Span::styled(
+                            "Load: ".to_string(),
+                            Style::default().fg(styler.config.get_palette_color("white")),
+                        ),
+                        Span::styled(
+                            format!("{:?}\n\n", unit.load),
+                            Style::default().fg(styler.config.get_palette_color(load_c)),
+                        ),
+                    ]),
+                    Line::from(vec![
+                        Span::styled(
+                            "Active: ".to_string(),
+                            Style::default().fg(styler.config.get_palette_color("white")),
+                        ),
+                        Span::styled(
+                            format!("{:?}\n\n", unit.active),
+                            Style::default().fg(styler.config.get_palette_color(active_c)),
+                        ),
+                    ]),
                     Line::from(Span::styled(
-                        format!("\t{:?}", unit.name),
-                        Style::default().fg(styler.config.get_palette_color("green")),
-                    )),
-                    Line::from(Span::styled(
-                        format!("\t{:?}", unit.sub),
-                        Style::default().fg(styler.config.get_palette_color("green")),
-                    )),
-                    Line::from(Span::styled(
-                        format!("\t{:?}", unit.load),
-                        Style::default().fg(styler.config.get_palette_color("green")),
-                    )),
-                    Line::from(Span::styled(
-                        format!("\t{:?}", unit.active),
-                        Style::default().fg(styler.config.get_palette_color("green")),
+                        "Message:\n\n".to_string(),
+                        Style::default().fg(styler.config.get_palette_color("white")),
                     )),
                     Line::from(Span::styled(
                         format!("\t{:?}", unit.description),
-                        Style::default().fg(styler.config.get_palette_color("green")),
+                        Style::default().fg(styler.config.get_palette_color("gray")),
                     )),
                 ]
             }
             CurrentLine::ServiceUnitFile(file) => {
                 info!("File: {:?}", file);
+                let state_c = get_state_color_str(&file.state);
+                let preset_c = get_preset_color_str(&file.preset);
+
                 vec![
-                    Line::from(Span::styled(
-                        format!("\t{:?}", file.name),
-                        Style::default().fg(styler.config.get_palette_color("blue")),
-                    )),
-                    Line::from(Span::styled(
-                        format!("\t{:?}", file.state),
-                        Style::default().fg(styler.config.get_palette_color("blue")),
-                    )),
-                    Line::from(Span::styled(
-                        format!("\t{:?}", file.preset),
-                        Style::default().fg(styler.config.get_palette_color("blue")),
-                    )),
+                    Line::from(vec![
+                        Span::styled(
+                            "[".to_string(),
+                            Style::default().fg(styler.config.get_palette_color("yellow")),
+                        ),
+                        Span::styled(
+                            format!("{:?}", file.name),
+                            Style::default().fg(styler.config.get_palette_color("white")),
+                        ),
+                        Span::styled(
+                            "]\n\n".to_string(),
+                            Style::default().fg(styler.config.get_palette_color("yellow")),
+                        ),
+                    ]),
+                    Line::from(vec![
+                        Span::styled(
+                            "State: ".to_string(),
+                            Style::default().fg(styler.config.get_palette_color("white")),
+                        ),
+                        Span::styled(
+                            format!("{:?}\n\n", file.state),
+                            Style::default().fg(styler.config.get_palette_color(state_c)),
+                        ),
+                    ]),
+                    Line::from(vec![
+                        Span::styled(
+                            "Preset: ".to_string(),
+                            Style::default().fg(styler.config.get_palette_color("white")),
+                        ),
+                        Span::styled(
+                            format!("{:?}\n\n", file.preset),
+                            Style::default().fg(styler.config.get_palette_color(preset_c)),
+                        ),
+                    ]),
                 ]
             }
         }
@@ -356,10 +434,10 @@ pub fn draw_whole_line(frame: &mut Frame<'_>, app: &App, styler: &Styler) -> Res
         ))]
     };
 
-    let line_fully_modal = Paragraph::new(content)
+    let entry_modal = Paragraph::new(content)
         .wrap(Wrap { trim: true })
         .block(
-            Block::bordered().title(" Entry as a whole ").style(
+            Block::bordered().title(" < Entry >").style(
                 Style::default()
                     .fg(styler.config.get_palette_color("white"))
                     .bg(styler.config.get_palette_color("black"))
@@ -368,6 +446,6 @@ pub fn draw_whole_line(frame: &mut Frame<'_>, app: &App, styler: &Styler) -> Res
         )
         .alignment(Alignment::Left);
 
-    render_after_clear(frame, area, line_fully_modal);
+    render_after_clear(frame, area, entry_modal);
     Ok(())
 }
