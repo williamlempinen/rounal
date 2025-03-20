@@ -8,7 +8,7 @@ use crate::core::{
 use crate::ui::{layouts::center, styles::GLOBAL_MARGIN};
 use crate::util::{
     get_active_color_str, get_load_color_str, get_preset_color_str, get_state_color_str,
-    get_sub_color_str, map_to_priority_str,
+    get_sub_color_str, map_to_priority_str, DOCS,
 };
 use log::info;
 use ratatui::{
@@ -40,7 +40,7 @@ pub struct UI {
     pub is_showing_line_in_modal: bool,
     pub is_in_logs: bool,
     pub is_in_search_mode: bool,
-    pub is_showing_explanations: bool,
+    pub is_showing_docs: bool,
     pub search_query: String,
     pub search_matches: Vec<CurrentLine>,
     pub selected_priority: Option<u8>,
@@ -53,7 +53,7 @@ impl UI {
             view: View::ServiceUnits,
             is_showing_help: false,
             is_showing_line_in_modal: false,
-            is_showing_explanations: false,
+            is_showing_docs: false,
             is_in_logs: false,
             is_in_search_mode: false,
             search_query: "".to_string(),
@@ -83,8 +83,8 @@ impl UI {
         self.is_showing_line_in_modal = state;
     }
 
-    pub fn set_is_showing_explanations(&mut self, state: bool) {
-        self.is_showing_explanations = state;
+    pub fn set_is_showing_docs(&mut self, state: bool) {
+        self.is_showing_docs = state;
     }
 
     pub fn set_is_in_search_mode(&mut self, state: bool) {
@@ -274,9 +274,10 @@ pub fn draw_help_modal(frame: &mut Frame<'_>, styler: &Styler) -> Result<()> {
         Select: [Enter]\n\
         Close logs: [c]\n\
         Change priority: [1-7] or [Move]\n\
-        See line in a modal: [K]\n\
+        Toggle see line in a modal: [K]\n\
         Yank message: [y] \n\
         Begin search: [/] \n\
+        Toddle read explanations: [E] \n\
         Exit search mode: [Esc] \n\
         Quit: [q / Esc]\n\
         Toggle Help: [?]\n";
@@ -464,9 +465,26 @@ pub fn draw_entry_line(frame: &mut Frame<'_>, app: &App, styler: &Styler) -> Res
     Ok(())
 }
 
-pub fn draw_explanations_modal(frame: &mut Frame<'_>, app: &App, styler: &Styler) -> Result<()> {
+pub fn draw_docs_modal(frame: &mut Frame<'_>, styler: &Styler) -> Result<()> {
     let area = center(frame.area(), Constraint::Max(70), Constraint::Max(20));
-    let explanations_modal = Paragraph::new("HELP");
-    render_after_clear(frame, area, explanations_modal);
+
+    let lines: Vec<Line> = DOCS
+        .lines()
+        .map(|line| Line::from(Span::raw(line)))
+        .collect();
+
+    let modal = Paragraph::new(lines)
+        .block(
+            Block::bordered().title(" DOCS ").style(
+                Style::default()
+                    .fg(styler.config.get_palette_color("white"))
+                    .bg(styler.config.get_palette_color("black"))
+                    .add_modifier(Modifier::BOLD),
+            ),
+        )
+        .wrap(Wrap { trim: true })
+        .alignment(Alignment::Left);
+
+    render_after_clear(frame, area, modal);
     Ok(())
 }

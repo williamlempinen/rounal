@@ -1,4 +1,4 @@
-use crate::ui::ui::{draw_entry_line, draw_explanations_modal, draw_help_modal, draw_ui, View, UI};
+use crate::ui::ui::{draw_docs_modal, draw_entry_line, draw_help_modal, draw_ui, View, UI};
 use crate::{
     core::{
         config::Config,
@@ -31,7 +31,7 @@ pub enum Events {
     GetHelp,
     GetLineInModal,
     Search,
-    Explanations,
+    Docs,
 }
 
 // TODO:
@@ -186,8 +186,8 @@ async fn run<B: Backend>(terminal: &mut Terminal<B>, mut app: App, styler: Style
                 draw_entry_line(frame, &app, &styler).ok();
             }
 
-            if app.ui.is_showing_explanations {
-                draw_explanations_modal(frame, &app, &styler).ok();
+            if app.ui.is_showing_docs {
+                draw_docs_modal(frame, &styler).ok();
             }
         })?;
 
@@ -196,9 +196,7 @@ async fn run<B: Backend>(terminal: &mut Terminal<B>, mut app: App, styler: Style
                 Events::Quit => app.set_is_running(false),
                 Events::Search => app.ui.set_is_in_search_mode(true),
                 Events::GetHelp => app.ui.set_is_showing_help(!app.ui.is_showing_help),
-                Events::Explanations => app
-                    .ui
-                    .set_is_showing_explanations(!app.ui.is_showing_explanations),
+                Events::Docs => app.ui.set_is_showing_docs(!app.ui.is_showing_docs),
                 Events::GetLineInModal => app
                     .ui
                     .set_is_showing_line_in_modal(!app.ui.is_showing_line_in_modal),

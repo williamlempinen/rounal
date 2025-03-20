@@ -1,5 +1,25 @@
 use crate::core::system::{Active, Load, Preset, State, Sub};
 
+pub const DOCS: &str = r#"
+The program will initially try to run the commands:
+
+systemctl list-units --type=service --all
+and
+systemctl list-unit-files --type=service --all
+
+Here is short description of the results and their meanings:
+LOAD:
+    Indicates if a unit file was loaded correctly.
+ACTIVE:
+    Describes if a service is currently running or not.
+SUB:
+    Provides a detailed state like running, exited, dead.
+STATE:
+    Whether the service is enabled, disabled, static, etc.
+PRESET:
+    System default recommendation for enabling services.
+"#;
+
 pub trait PadStr {
     fn pad_with(&self, width: usize) -> String;
 }

@@ -1,5 +1,5 @@
 use crate::app::{App, Events};
-use crate::core::clipboard::copy_to_clipboard;
+use crate::core::clipboard::yank_to_clipboard;
 use crate::ui::ui::View;
 use crossterm::event::{self, Event, KeyCode, KeyEvent};
 use log::info;
@@ -18,9 +18,21 @@ pub fn handle_key_events(app: &mut App) -> Option<Events> {
             return handle_search_key_events(app, key);
         }
 
+        if app.ui.is_showing_docs {
+            return handle_see_docs_key_events(key);
+        }
+
         return handle_services_key_events(app, key);
     }
     None
+}
+
+fn handle_see_docs_key_events(key: KeyEvent) -> Option<Events> {
+    match key.code {
+        KeyCode::Esc | KeyCode::Char('q') => Some(Events::Quit),
+        KeyCode::Char('E') => Some(Events::Docs),
+        _ => None,
+    }
 }
 
 fn handle_search_key_events(app: &mut App, key: KeyEvent) -> Option<Events> {
@@ -63,8 +75,10 @@ fn handle_logs_key_events(app: &mut App, key: KeyEvent) -> Option<Events> {
         0
     };
 
-    let allow_actions =
-        !app.ui.is_showing_line_in_modal && !app.ui.is_showing_help && !app.ui.is_in_search_mode;
+    let allow_actions = !app.ui.is_showing_line_in_modal
+        && !app.ui.is_showing_help
+        && !app.ui.is_in_search_mode
+        && !app.ui.is_showing_docs;
 
     match key.code {
         KeyCode::Esc | KeyCode::Char('q') => Some(Events::Quit),
@@ -72,7 +86,7 @@ fn handle_logs_key_events(app: &mut App, key: KeyEvent) -> Option<Events> {
         KeyCode::Char('K') => Some(Events::GetLineInModal),
         KeyCode::Char('/') => Some(Events::Search),
         KeyCode::Char('y') => {
-            copy_to_clipboard(
+            yank_to_clipboard(
                 app.ui
                     .get_log_message(&app)
                     .unwrap_or("Error yanking log message".to_string()),
@@ -139,24 +153,28 @@ fn handle_services_key_events(app: &mut App, key: crossterm::event::KeyEvent) ->
         None => 0,
     };
 
-    let allow_actions =
-        !app.ui.is_showing_line_in_modal && !app.ui.is_showing_help && !app.ui.is_in_search_mode;
+    let allow_actions = !app.ui.is_showing_line_in_modal
+        && !app.ui.is_showing_help
+        && !app.ui.is_in_search_mode
+        && !app.ui.is_showing_docs;
 
     match key.code {
         KeyCode::Esc | KeyCode::Char('q') => Some(Events::Quit),
         KeyCode::Char('?') => Some(Events::GetHelp),
         KeyCode::Char('/') => Some(Events::Search),
         KeyCode::Char('K') => Some(Events::GetLineInModal),
-        KeyCode::Char('E') => Some(Events::Explanations),
+        KeyCode::Char('E') => Some(Events::Docs),
         _ => {
             if allow_actions {
                 match key.code {
                     KeyCode::Down | KeyCode::Char('j') => {
                         app.ui.move_cursor_down(services_len);
+                        info!("KEYS D: {}", app.ui.is_showing_docs);
                         None
                     }
                     KeyCode::Up | KeyCode::Char('k') => {
                         app.ui.move_cursor_up();
+                        info!("KEYS U: {}", app.ui.is_showing_docs);
                         None
                     }
                     KeyCode::Right | KeyCode::Char('l') => {
