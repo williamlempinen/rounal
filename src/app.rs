@@ -37,9 +37,11 @@ pub enum Events {
 // TODO:
 //      - yanking -> clipboard content destroyed after exiting application
 //      - explanations modal
+//      - align items vertically and title columns
 //      - responsive layout
 //      - error handling -> no reason to panic every time
 //      - filtering based on status (failed | running | exited)
+//      - actions for: start | stop | status
 
 #[derive(Debug)]
 pub struct App {

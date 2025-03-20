@@ -220,7 +220,7 @@ pub fn draw_ui(frame: &mut Frame<'_>, app: &App, styler: &Styler) -> Result<()> 
 
         render_after_clear(frame, content_area, logs_list);
     } else {
-        let services: Vec<ListItem> = match &app.services {
+        let mut services: Vec<ListItem> = match &app.services {
             Some((units, unit_files)) => {
                 if app.ui.view == View::ServiceUnits {
                     units
@@ -243,11 +243,13 @@ pub fn draw_ui(frame: &mut Frame<'_>, app: &App, styler: &Styler) -> Result<()> 
             None => vec![],
         };
 
+        services.insert(0, styler.get_column_titles(&app.ui.view));
+
         let list = List::new(services)
             .block(
                 Block::bordered()
                     .title_alignment(Alignment::Center)
-                    .title(styler.get_services_title(app.ui.view.clone())),
+                    .title(styler.get_services_container(app.ui.view.clone())),
             )
             .style(
                 Style::default()

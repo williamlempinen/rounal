@@ -1,5 +1,15 @@
 use crate::core::system::{Active, Load, Preset, State, Sub};
 
+pub trait PadStr {
+    fn pad_with(&self, width: usize) -> String;
+}
+
+impl PadStr for str {
+    fn pad_with(&self, width: usize) -> String {
+        format!("{:<width$}", self, width = width)
+    }
+}
+
 pub fn map_to_priority_str(priority: &u8) -> &'static str {
     match priority {
         1 => "emerg",

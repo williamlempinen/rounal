@@ -8,7 +8,7 @@ use crate::{
     ui::ui::View,
     util::{
         get_active_color_str, get_load_color_str, get_preset_color_str, get_state_color_str,
-        get_sub_color_str,
+        get_sub_color_str, PadStr,
     },
 };
 use ratatui::{
@@ -44,7 +44,39 @@ impl Styler {
         }
     }
 
-    pub(crate) fn get_services_title(&self, view: View) -> Line<'static> {
+    pub(crate) fn get_column_titles(&self, view: &View) -> ListItem<'static> {
+        match view {
+            View::ServiceUnits => ListItem::new(Line::from(vec![
+                Span::styled(
+                    " NAME".pad_with(20),
+                    self.config.get_palette_color("yellow"),
+                ),
+                Span::styled("LOAD".pad_with(10), self.config.get_palette_color("yellow")),
+                Span::styled(
+                    "ACTIVE".pad_with(10),
+                    self.config.get_palette_color("yellow"),
+                ),
+                Span::styled("SUB".pad_with(10), self.config.get_palette_color("yellow")),
+                Span::styled("MESSAGE", self.config.get_palette_color("yellow")),
+            ])),
+            View::ServiceUnitFiles => ListItem::new(Line::from(vec![
+                Span::styled(
+                    " NAME".pad_with(20),
+                    self.config.get_palette_color("yellow"),
+                ),
+                Span::styled(
+                    "STATE".pad_with(10),
+                    self.config.get_palette_color("yellow"),
+                ),
+                Span::styled(
+                    "PRESET".pad_with(10),
+                    self.config.get_palette_color("yellow"),
+                ),
+            ])),
+        }
+    }
+
+    pub(crate) fn get_services_container(&self, view: View) -> Line<'static> {
         let active = Style::default()
             .fg(self.config.get_palette_color("green"))
             .add_modifier(Modifier::BOLD);
