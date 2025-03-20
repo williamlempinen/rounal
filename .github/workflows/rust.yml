@@ -17,7 +17,7 @@ jobs:
 
     # Setup Rust toolchain
     - name: Set up Rust
-      uses: actions/setup-rust@v1
+      uses: actions/toolchain@v1
       with:
         rust-version: stable
 
