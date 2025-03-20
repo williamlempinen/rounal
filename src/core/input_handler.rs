@@ -41,7 +41,7 @@ fn handle_search_key_events(app: &mut App, key: KeyEvent) -> Option<Events> {
         }
         KeyCode::Enter => {
             app.ui.is_in_search_mode = false;
-            app.highlight_and_reorder_lines();
+            app.reorder_lines();
             None
         }
         _ => None,
@@ -147,6 +147,7 @@ fn handle_services_key_events(app: &mut App, key: crossterm::event::KeyEvent) ->
         KeyCode::Char('?') => Some(Events::GetHelp),
         KeyCode::Char('/') => Some(Events::Search),
         KeyCode::Char('K') => Some(Events::GetLineInModal),
+        KeyCode::Char('E') => Some(Events::Explanations),
         _ => {
             if allow_actions {
                 match key.code {

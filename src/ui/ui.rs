@@ -40,6 +40,7 @@ pub struct UI {
     pub is_showing_line_in_modal: bool,
     pub is_in_logs: bool,
     pub is_in_search_mode: bool,
+    pub is_showing_explanations: bool,
     pub search_query: String,
     pub search_matches: Vec<CurrentLine>,
     pub selected_priority: Option<u8>,
@@ -52,6 +53,7 @@ impl UI {
             view: View::ServiceUnits,
             is_showing_help: false,
             is_showing_line_in_modal: false,
+            is_showing_explanations: false,
             is_in_logs: false,
             is_in_search_mode: false,
             search_query: "".to_string(),
@@ -79,6 +81,10 @@ impl UI {
 
     pub fn set_is_showing_line_in_modal(&mut self, state: bool) {
         self.is_showing_line_in_modal = state;
+    }
+
+    pub fn set_is_showing_explanations(&mut self, state: bool) {
+        self.is_showing_explanations = state;
     }
 
     pub fn set_is_in_search_mode(&mut self, state: bool) {
@@ -443,7 +449,7 @@ pub fn draw_entry_line(frame: &mut Frame<'_>, app: &App, styler: &Styler) -> Res
     let entry_modal = Paragraph::new(content)
         .wrap(Wrap { trim: true })
         .block(
-            Block::bordered().title(" < Entry >").style(
+            Block::bordered().title(" < Entry > ").style(
                 Style::default()
                     .fg(styler.config.get_palette_color("white"))
                     .bg(styler.config.get_palette_color("black"))
@@ -457,5 +463,8 @@ pub fn draw_entry_line(frame: &mut Frame<'_>, app: &App, styler: &Styler) -> Res
 }
 
 pub fn draw_explanations_modal(frame: &mut Frame<'_>, app: &App, styler: &Styler) -> Result<()> {
+    let area = center(frame.area(), Constraint::Max(70), Constraint::Max(20));
+    let explanations_modal = Paragraph::new("HELP");
+    render_after_clear(frame, area, explanations_modal);
     Ok(())
 }

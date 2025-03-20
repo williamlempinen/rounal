@@ -1,4 +1,4 @@
-use crate::ui::ui::{draw_entry_line, draw_help_modal, draw_ui, View, UI};
+use crate::ui::ui::{draw_entry_line, draw_explanations_modal, draw_help_modal, draw_ui, View, UI};
 use crate::{
     core::{
         config::Config,
@@ -31,15 +31,14 @@ pub enum Events {
     GetHelp,
     GetLineInModal,
     Search,
+    Explanations,
 }
 
 // TODO:
 //      - yanking -> clipboard content destroyed after exiting application
-//      - action mode
 //      - explanations modal
 //      - responsive layout
 //      - error handling -> no reason to panic every time
-//      - upgrade package xcb to > 1.0 -> use arboard crate for clipboard management
 //      - filtering based on status (failed | running | exited)
 
 #[derive(Debug)]
@@ -84,7 +83,7 @@ impl App {
         self.logs = None;
     }
 
-    pub fn highlight_and_reorder_lines(&mut self) {
+    pub fn reorder_lines(&mut self) {
         if self.ui.search_query.trim().is_empty() {
             return;
         }
@@ -184,6 +183,10 @@ async fn run<B: Backend>(terminal: &mut Terminal<B>, mut app: App, styler: Style
             if app.ui.is_showing_line_in_modal {
                 draw_entry_line(frame, &app, &styler).ok();
             }
+
+            if app.ui.is_showing_explanations {
+                draw_explanations_modal(frame, &app, &styler).ok();
+            }
         })?;
 
         if let Some(event) = handle_key_events(&mut app) {
@@ -191,6 +194,9 @@ async fn run<B: Backend>(terminal: &mut Terminal<B>, mut app: App, styler: Style
                 Events::Quit => app.set_is_running(false),
                 Events::Search => app.ui.set_is_in_search_mode(true),
                 Events::GetHelp => app.ui.set_is_showing_help(!app.ui.is_showing_help),
+                Events::Explanations => app
+                    .ui
+                    .set_is_showing_explanations(!app.ui.is_showing_explanations),
                 Events::GetLineInModal => app
                     .ui
                     .set_is_showing_line_in_modal(!app.ui.is_showing_line_in_modal),
