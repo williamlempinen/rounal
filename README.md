@@ -41,7 +41,7 @@ This project serve as my submission to my university course, `Modern user interf
 
 ---
 
-##### Via .deb package
+#### Via .deb package
 Visit the [Releases](https://github.com/williamlempinen/rounal/releases) page and download the latest `.deb` file:
 
 ```sh
@@ -51,7 +51,7 @@ sudo dpkg -i rounal_0.1.0_amd64.deb
 rounal
 ```
 
-##### Building from source
+#### Building from source
 ```sh
 git clone git@github.com:williamlempinen/rounal.git
 ###
