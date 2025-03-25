@@ -160,7 +160,7 @@ pub fn draw_ui(frame: &mut Frame<'_>, app: &App, styler: &Styler) -> Result<()> 
         .constraints([Constraint::Percentage(97), Constraint::Percentage(3)])
         .split(frame.area());
     let content_area = terminal_layout
-        .get(0)
+        .first()
         .expect("Error getting terminal layout")
         .clone();
     let action_area = terminal_layout
