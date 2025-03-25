@@ -16,11 +16,11 @@ insert gif here*
 
 ### Features
 
-- **Filter logs by priority** (emerg, alert, err, etc.)
-- **Navigate easily** with Vim-style or arrow keybindings
-- **Copy (yank) logs to clipboard**
-- **Customizable colors and behavior** via config
-- **Async fetching of journal entries** for better performance
+- Filter logs by priority (emerg, alert, err, etc.)
+- Navigate easily with Vim-style or arrow keybindings
+- Copy (yank) logs to clipboard
+- Customizable colors and behavior via config
+- Async fetching of journal entries for better performance
 
 ### Motivation
 
@@ -32,26 +32,65 @@ This project serve as my submission to my university course, `Modern user interf
 
 ##### Prerequisites
 
-- A Unix system with `systemd` and `journalctl` available.
+- Linux system with `systemd` and `journalctl` available.
 - Rust and Cargo (`rustup` recommended): https://rustup.rs
 - A terminal that supports UTF-8 characters.
 - `sudo` commands supported, i.e. the program will fetch `journalctl` entries with the command:
 
 `sudo journalctl -u <selected-service> -r -p <1-7>`
 
+---
+
+##### Via .deb package
+Visit the [Releases](https://github.com/williamlempinen/rounal/releases) page and download the latest `.deb` file:
+
+```sh
+# Install
+sudo dpkg -i rounal_0.1.0_amd64.deb
+# Running after install
+rounal
+```
+
+##### Building from source
+```sh
+git clone git@github.com:williamlempinen/rounal.git
+###
+cd rounal
+###
+cargo build --release
+###
+cargo run --release
+```
 
 ### Usage
+**j** / **k** or **arrow keys** to move cursor
 
+**Enter** to select a service and view its logs
+
+**/** to search by service name or timestamp
+
+**K** to open current line in modal, created for long log messages
+
+**c** to go back from selected service logs
+
+**y** to yank the log to your clipboard
+
+**?** for help
+
+**E** to read documentation
+
+**q** or **Esc** to quit
 
 
 ### Customization
 
+TODO
 
 
 ### Inspiration
 
-
-
+- **gitui**: https://github.com/gitui-org/gitui
+- **atuin**: https://github.com/atuinsh/atuin
 
 ### Future work
-- Complete rewrite f
+- Full rewrite
