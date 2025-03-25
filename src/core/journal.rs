@@ -88,8 +88,8 @@ async fn get_logs(service: String, priority: u8) -> Result<Vec<JournalLog>> {
     if !out.status.success() {
         return Err(RounalError::JournalCtlError(format!(
             "{}, {}",
-            service.to_string(),
-            String::from_utf8_lossy(&out.stderr).to_string()
+            service,
+            String::from_utf8_lossy(&out.stderr)
         )));
     }
 
@@ -108,18 +108,19 @@ fn parse_log(log_line: &str, p: &u8) -> Option<JournalLog> {
 
     match p {
         1..=7 => {
-            let priority = p.clone();
+            let priority = *p;
             let timestamp = parts.get(..3)?.join(" ");
             let hostname = parts.get(3)?.to_string();
             let service = parts.get(4)?.trim_end_matches(":").to_string();
             let log_message = parts.get(5..)?.join(" ").to_string();
-            return Some(JournalLog {
+
+            Some(JournalLog {
                 priority,
                 timestamp,
                 log_message,
                 hostname,
                 service,
-            });
+            })
         }
         _ => None,
     }

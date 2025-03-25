@@ -34,13 +34,13 @@ impl Styler {
 
     pub(crate) fn get_bottom_info(&self, ui: &UI) -> Paragraph<'static> {
         if ui.is_in_search_mode {
-            return Paragraph::new(format!(" -- SEARCH MODE: {}", ui.search_query))
+            Paragraph::new(format!(" -- SEARCH MODE: {}", ui.search_query))
                 .alignment(Alignment::Left)
-                .style(Style::default().fg(self.config.get_palette_color("blue")));
+                .style(Style::default().fg(self.config.get_palette_color("blue")))
         } else {
-            return Paragraph::new(" -- Press [?] for help -- ")
+            Paragraph::new(" -- Press [?] for help -- ")
                 .alignment(Alignment::Center)
-                .style(Style::default().fg(self.config.get_palette_color("white")));
+                .style(Style::default().fg(self.config.get_palette_color("white")))
         }
     }
 

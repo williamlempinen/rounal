@@ -216,7 +216,7 @@ pub async fn get_list_unit_files() -> Result<Vec<ServiceUnitFiles>> {
     if !out.status.success() {
         return Err(RounalError::SystemCtlError(format!(
             "{}",
-            String::from_utf8_lossy(&out.stderr).to_string()
+            String::from_utf8_lossy(&out.stderr)
         )));
     }
 
@@ -225,7 +225,7 @@ pub async fn get_list_unit_files() -> Result<Vec<ServiceUnitFiles>> {
     let services: Vec<ServiceUnitFiles> = stdout
         .lines()
         .skip(1) // first is column headers
-        .filter_map(|line| parse_service_unit_files(line))
+        .filter_map(parse_service_unit_files)
         .collect();
 
     Ok(services)
@@ -242,7 +242,7 @@ fn parse_service_unit_files(service_line: &str) -> Option<ServiceUnitFiles> {
     }
 
     let name = parts
-        .get(0)
+        .first()
         .expect("Failed to get service name")
         .to_owned()
         .to_string();

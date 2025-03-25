@@ -88,7 +88,7 @@ fn handle_logs_key_events(app: &mut App, key: KeyEvent) -> Option<Events> {
         KeyCode::Char('y') => {
             yank_to_clipboard(
                 app.ui
-                    .get_log_message(&app)
+                    .get_log_message(app)
                     .unwrap_or("Error yanking log message".to_string()),
             )
             .ok();

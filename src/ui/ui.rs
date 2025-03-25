@@ -122,19 +122,17 @@ impl UI {
                 .get(self.selected_priority.as_ref()?)?
                 .get(self.current_line)
                 .map(|log| CurrentLine::Log(log.clone()));
-        } else {
-            if let Some((u, f)) = app.services.as_ref() {
-                let service_line = match self.view {
-                    View::ServiceUnits => u
-                        .get(self.current_line)
-                        .map(|unit| CurrentLine::ServiceUnit(unit.clone())),
-                    View::ServiceUnitFiles => f
-                        .get(self.current_line)
-                        .map(|file| CurrentLine::ServiceUnitFile(file.clone())),
-                };
+        } else if let Some((u, f)) = app.services.as_ref() {
+            let service_line = match self.view {
+                View::ServiceUnits => u
+                    .get(self.current_line)
+                    .map(|unit| CurrentLine::ServiceUnit(unit.clone())),
+                View::ServiceUnitFiles => f
+                    .get(self.current_line)
+                    .map(|file| CurrentLine::ServiceUnitFile(file.clone())),
+            };
 
-                return service_line;
-            }
+            return service_line;
         };
         None
     }
@@ -159,7 +157,7 @@ pub fn draw_ui(frame: &mut Frame<'_>, app: &App, styler: &Styler) -> Result<()> 
     let terminal_layout = Layout::default()
         .margin(GLOBAL_MARGIN)
         .direction(Direction::Vertical)
-        .constraints(&[Constraint::Percentage(97), Constraint::Percentage(3)])
+        .constraints([Constraint::Percentage(97), Constraint::Percentage(3)])
         .split(frame.area());
     let content_area = terminal_layout
         .get(0)
@@ -198,7 +196,7 @@ pub fn draw_ui(frame: &mut Frame<'_>, app: &App, styler: &Styler) -> Result<()> 
             vec![]
         };
 
-        let final_items = if logs_items.len() < 1 {
+        let final_items = if logs_items.is_empty() {
             vec![ListItem::new("No log entries").style(priority_style)]
         } else {
             logs_items
@@ -301,7 +299,7 @@ pub fn draw_help_modal(frame: &mut Frame<'_>, styler: &Styler) -> Result<()> {
 pub fn draw_entry_line(frame: &mut Frame<'_>, app: &App, styler: &Styler) -> Result<()> {
     let area = center(frame.area(), Constraint::Max(70), Constraint::Max(20));
 
-    let content: Vec<Line> = if let Some(line) = app.ui.get_current_line(&app) {
+    let content: Vec<Line> = if let Some(line) = app.ui.get_current_line(app) {
         match line {
             CurrentLine::Log(log) => {
                 info!("Log: {:?}", log);

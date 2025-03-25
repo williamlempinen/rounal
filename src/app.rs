@@ -117,32 +117,27 @@ impl App {
                     }
                 }
             }
-        } else {
-            if let Some((units, files)) = &mut self.services {
-                match self.ui.view {
-                    View::ServiceUnits => {
-                        units.sort_by_key(|u| {
-                            let name_desc = format!(
-                                "{} {}",
-                                u.name.to_lowercase(),
-                                u.description.to_lowercase()
-                            );
-                            if name_desc.contains(&q) {
-                                0
-                            } else {
-                                1
-                            }
-                        });
-                    }
-                    View::ServiceUnitFiles => {
-                        files.sort_by_key(|f| {
-                            if f.name.to_lowercase().contains(&q) {
-                                0
-                            } else {
-                                1
-                            }
-                        });
-                    }
+        } else if let Some((units, files)) = &mut self.services {
+            match self.ui.view {
+                View::ServiceUnits => {
+                    units.sort_by_key(|u| {
+                        let name_desc =
+                            format!("{} {}", u.name.to_lowercase(), u.description.to_lowercase());
+                        if name_desc.contains(&q) {
+                            0
+                        } else {
+                            1
+                        }
+                    });
+                }
+                View::ServiceUnitFiles => {
+                    files.sort_by_key(|f| {
+                        if f.name.to_lowercase().contains(&q) {
+                            0
+                        } else {
+                            1
+                        }
+                    });
                 }
             }
         }
