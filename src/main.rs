@@ -3,12 +3,19 @@ use rounal::app;
 use rounal::core::{config::Config, error::Result};
 use simple_logging::*;
 use std::env;
+use std::path::Path;
 
 #[tokio::main]
 async fn main() -> Result<()> {
     env::set_var("RUST_BACKTRACE", "1");
 
-    let config = Config::load("app_config.toml")?;
+    let config_path = if Path::new("app_config.toml").exists() {
+        "app_config.toml".to_string()
+    } else {
+        "/etc/rounal/app_config.toml".to_string()
+    };
+
+    let config = Config::load(&config_path)?;
     let _ = log_to_file("debug.log", config.options.to_level_filter());
 
     info!("CONFIG: {:?}", config);

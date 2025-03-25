@@ -15,3 +15,21 @@ simple-logging = "2.0.2"
 thiserror = "2.0.10"
 tokio = {version = "1.42.0", features = ["full"]}
 toml = "0.8.20"
+
+[package.metadata.deb]
+maintainer = "William Lempinen <wlempin@gmail.com>"
+copyright = "2025, William Lempinen, <wlempin@gmail.com>"
+license-file = ["LICENSE", "4"]
+extended-description = """
+Rounal is a terminal-based application written in Rust that helps you explore and filter
+systemd journal logs interactively. It has Vim-style keybindings.
+"""
+depends = "$auto"
+section = "utility"
+priority = "optional"
+assets = [
+  ["target/release/rounal", "usr/bin/rounal", "755"],
+  ["app_config.toml", "etc/rounal/app_config.toml", "644"],
+  ["README.md", "usr/share/doc/rounal/README", "644"],
+]
+
