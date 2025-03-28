@@ -1,5 +1,6 @@
 [package]
 name = "rounal"
+description = "Rounal is a Rust TUI tool to explore journalctl logs."
 version = "0.1.0"
 edition = "2021"
 path = "src/lib.rs"
