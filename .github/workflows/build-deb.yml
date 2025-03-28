@@ -1,0 +1,32 @@
+name: Build and Release .deb
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  build-deb:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v4
+
+    - name: Set up Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        profile: minimal
+
+    - name: Install cargo-deb
+      run: cargo install cargo-deb
+
+    - name: Build .deb package
+      run: cargo deb --no-build --package rounal
+
+    - name: Upload .deb to release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: target/debian/*.deb
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
