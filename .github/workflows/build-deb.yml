@@ -22,7 +22,7 @@ jobs:
       run: cargo install cargo-deb
 
     - name: Build .deb package
-      run: cargo deb --no-build --package rounal
+      run: cargo deb --package rounal
 
     - name: Upload .deb to release
       uses: softprops/action-gh-release@v1
