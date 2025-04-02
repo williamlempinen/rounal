@@ -2,7 +2,9 @@
 
 **Rust TUI application that lets you explore and view `journarlctl` logs in a clean and interactive terminal interface.**
 
-insert gif here*
+https://github.com/user-attachments/assets/86488fcc-a152-42e6-9051-cec17c9bce0e
+
+
 
 ## Table of contents
 - [Features](#features)
