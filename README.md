@@ -37,7 +37,7 @@ This project serve as my submission to my university course, `Modern user interf
 - Linux system with `systemd` and `journalctl` available.
 - Rust and Cargo (`rustup` recommended): https://rustup.rs
 - A terminal that supports UTF-8 characters.
-- `sudo` commands supported, i.e. the program will fetch `journalctl` entries with the command:
+- `sudo` commands supported, => the program will fetch `journalctl` entries with the command:
 
 `sudo journalctl -u <selected-service> -r -p <1-7>`
 
@@ -59,9 +59,11 @@ git clone git@github.com:williamlempinen/rounal.git
 ###
 cd rounal
 ###
-cargo build --release
+cargo build
 ###
-cargo run --release
+cargo deb
+###
+# install the .deb from target/debian/<rounal*>.deb
 ```
 
 ### Usage
@@ -86,13 +88,19 @@ cargo run --release
 
 ### Customization
 
-TODO
+Some configurations are loaded from `app_config.toml`, for example color configurations. These can be modified to create customized UI. Current color settings are selected based on the `GitHub Dark Default` -theme.
 
 
 ### Inspiration
 
 - **gitui**: https://github.com/gitui-org/gitui
 - **atuin**: https://github.com/atuinsh/atuin
+
+### Bugs
+
+There are issues regarding copying to clipboard. Waiting for fixes, [Issues](https://github.com/1Password/arboard/issues)
+
+Terminal's `sudo password` prompt is catched in any way, which can lead to not desired behavior of the ui.
 
 ### Future work
 - Full rewrite
