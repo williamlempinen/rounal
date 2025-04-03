@@ -35,10 +35,7 @@ pub enum Events {
 }
 
 // TODO:
-//      - explanations modal
-//      - align items vertically and title columns
-//      - responsive layout
-//      - error handling -> no reason to panic every time
+//      - align items and title columns vertically
 //      - filtering based on status (failed | running | exited)
 //      - actions for: start | stop | status
 
