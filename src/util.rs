@@ -4,7 +4,7 @@ pub const DOCS: &str = r#"
 Commands that the program will run.
 systemctl list-units --type=service --all,
 systemctl list-unit-files --type=service --all,
-sudo journalctl -u <service> -r -p <1-7>
+sudo journalctl --unit=<service> --reverse --priority=<1-7>
 
 Short description of service fields:
 LOAD:
