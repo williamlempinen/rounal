@@ -37,9 +37,15 @@ This project serve as my submission to my university course, `Modern user interf
 - Linux system with `systemd` and `journalctl` available.
 - Rust and Cargo (`rustup` recommended): https://rustup.rs
 - A terminal that supports UTF-8 characters.
-- `sudo` commands supported, => the program will fetch `journalctl` entries with the command:
+- Commands that the program will run are listed below:
 
-`sudo journalctl -u <selected-service> -r -p <1-7>`
+```sh
+systemctl list-unit-files --type=service --all
+###
+systemctl list-units --type=service --all
+###
+sudo journalctl -u <selected-service> -r -p <1-7>
+```
 
 ---
 
@@ -59,11 +65,10 @@ git clone git@github.com:williamlempinen/rounal.git
 ###
 cd rounal
 ###
-cargo build
+cargo build --release
 ###
-cargo deb
+target/release/rounal
 ###
-# install the .deb from target/debian/<rounal*>.deb
 ```
 
 ### Usage
@@ -81,7 +86,7 @@ cargo deb
 
 **?** for help
 
-**E** to read documentation
+**E** to read short docs
 
 **q** or **Esc** to quit
 
@@ -98,9 +103,13 @@ Some configurations are loaded from `app_config.toml`, for example color configu
 
 ### Bugs
 
-There are issues regarding copying to clipboard. Waiting for fixes, [Issues](https://github.com/1Password/arboard/issues)
+There are might be problems regarding copying messages to clipboard. There is ongoing discussion about fixes, [Issues](https://github.com/1Password/arboard/issues)
 
-Terminal's `sudo password` prompt is catched in any way, which can lead to not desired behavior of the ui.
+Terminal's `sudo password` prompt is not `catched` in any way, which can lead to not desired behavior of the ui.
 
 ### Future work
 - Full rewrite
+- Ability to filter services based on states (sub, load, etc.)
+- Highlighting search matches
+- Horizontal scrolling for longer messages
+- More responsive layout

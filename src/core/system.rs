@@ -179,25 +179,28 @@ fn parse_service_units(service_line: &str) -> Option<ServiceUnits> {
     };
 
     let parts: Vec<&str> = service_line.split_whitespace().collect();
+    info!("units parts: {:?}", parts);
 
     if parts.len() < 4 {
-        info!("Service is missing parts with length of {}", parts.len());
+        info!("Service is missing parts");
         info!("{:?}", parts);
         return None;
     }
 
-    let name = parts
-        .get(idx)
-        .expect("Failed to get service name")
-        .to_owned()
-        .to_string();
+    let name = parts.get(idx)?.to_owned();
+
+    if !name.ends_with(".service") {
+        info!("Not a valid service");
+        return None;
+    }
+
     let load = Load::get_load_state(parts.get(idx + 1)?);
     let active = Active::get_active_state(parts.get(idx + 2)?);
     let sub = Sub::get_sub_state(parts.get(idx + 3)?);
     let description = parts.get(idx + 4..)?.join(" ");
 
     Some(ServiceUnits {
-        name,
+        name: name.to_string(),
         load,
         active,
         sub,
@@ -233,24 +236,26 @@ pub async fn get_list_unit_files() -> Result<Vec<ServiceUnitFiles>> {
 
 fn parse_service_unit_files(service_line: &str) -> Option<ServiceUnitFiles> {
     let parts: Vec<&str> = service_line.split_whitespace().collect();
-    //info!("{:?}", parts);
+    info!("files {:?}", parts);
 
     if parts.len() < 3 {
-        info!("Service is missing parts with length of {}", parts.len());
+        info!("Service is missing parts");
         info!("{:?}", parts);
         return None;
     }
 
-    let name = parts
-        .first()
-        .expect("Failed to get service name")
-        .to_owned()
-        .to_string();
+    let name = parts.first()?.to_owned();
+
+    if !name.ends_with(".service") {
+        info!("Not a valid service");
+        return None;
+    }
+
     let state = State::get_state(parts.get(1)?);
     let preset = Preset::get_preset_state(parts.get(2)?);
 
     Some(ServiceUnitFiles {
-        name,
+        name: name.to_string(),
         state,
         preset,
     })

@@ -1,13 +1,12 @@
 use crate::core::system::{Active, Load, Preset, State, Sub};
 
 pub const DOCS: &str = r#"
-The program will initially try to run the commands:
+Commands that the program will run.
+systemctl list-units --type=service --all,
+systemctl list-unit-files --type=service --all,
+sudo journalctl -u <service> -r -p <1-7>
 
-systemctl list-units --type=service --all
-and
-systemctl list-unit-files --type=service --all
-
-Here is short description of the results and their meanings:
+Short description of service fields:
 LOAD:
     Indicates if a unit file was loaded correctly.
 ACTIVE:

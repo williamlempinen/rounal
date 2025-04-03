@@ -35,7 +35,6 @@ pub enum Events {
 }
 
 // TODO:
-//      - yanking -> clipboard content destroyed after exiting application
 //      - explanations modal
 //      - align items vertically and title columns
 //      - responsive layout

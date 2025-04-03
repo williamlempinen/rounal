@@ -10,18 +10,14 @@ pub fn handle_key_events(app: &mut App) -> Option<Events> {
             if app.ui.is_in_search_mode {
                 return handle_search_key_events(app, key);
             }
-
             return handle_logs_key_events(app, key);
         }
-
         if app.ui.is_in_search_mode {
             return handle_search_key_events(app, key);
         }
-
         if app.ui.is_showing_docs {
             return handle_see_docs_key_events(key);
         }
-
         return handle_services_key_events(app, key);
     }
     None
@@ -169,12 +165,10 @@ fn handle_services_key_events(app: &mut App, key: crossterm::event::KeyEvent) ->
                 match key.code {
                     KeyCode::Down | KeyCode::Char('j') => {
                         app.ui.move_cursor_down(services_len);
-                        info!("KEYS D: {}", app.ui.is_showing_docs);
                         None
                     }
                     KeyCode::Up | KeyCode::Char('k') => {
                         app.ui.move_cursor_up();
-                        info!("KEYS U: {}", app.ui.is_showing_docs);
                         None
                     }
                     KeyCode::Right | KeyCode::Char('l') => {
