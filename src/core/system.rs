@@ -133,6 +133,17 @@ pub struct ServiceUnitFiles {
     pub preset: Preset,
 }
 
+pub async fn start_service(name: &String) -> Result<()> {
+    Ok(())
+}
+pub async fn restart_service(name: &String) -> Result<()> {
+    Ok(())
+}
+
+pub async fn stop_service(name: &String) -> Result<()> {
+    Ok(())
+}
+
 pub async fn get_system_services() -> Result<(Vec<ServiceUnits>, Vec<ServiceUnitFiles>)> {
     Ok((
         tokio::spawn(get_list_units())

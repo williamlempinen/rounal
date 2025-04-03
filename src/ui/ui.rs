@@ -38,6 +38,7 @@ pub struct UI {
     pub view: View,
     pub is_showing_help: bool,
     pub is_showing_line_in_modal: bool,
+    pub is_in_actions: bool,
     pub is_in_logs: bool,
     pub is_in_search_mode: bool,
     pub is_showing_docs: bool,
@@ -53,6 +54,7 @@ impl UI {
             view: View::ServiceUnits,
             is_showing_help: false,
             is_showing_line_in_modal: false,
+            is_in_actions: false,
             is_showing_docs: false,
             is_in_logs: false,
             is_in_search_mode: false,
@@ -261,6 +263,26 @@ pub fn draw_ui(frame: &mut Frame<'_>, app: &App, styler: &Styler) -> Result<()> 
     let bottom_area = styler.get_bottom_info(&app.ui);
     render_after_clear(frame, action_area, bottom_area);
 
+    Ok(())
+}
+
+pub fn draw_actions_modal(frame: &mut Frame<'_>, styler: &Styler) -> Result<()> {
+    let area = center(frame.area(), Constraint::Max(40), Constraint::Max(20));
+
+    let actions_modal = Paragraph::new(HELP)
+        .block(
+            Block::bordered()
+                .title(" What would like like to do ")
+                .style(
+                    Style::default()
+                        .fg(styler.config.get_palette_color("white"))
+                        .bg(styler.config.get_palette_color("black"))
+                        .add_modifier(Modifier::BOLD),
+                ),
+        )
+        .alignment(Alignment::Center);
+
+    render_after_clear(frame, area, actions_modal);
     Ok(())
 }
 
