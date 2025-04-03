@@ -8,7 +8,7 @@ use crate::core::{
 use crate::ui::{layouts::center, styles::GLOBAL_MARGIN};
 use crate::util::{
     get_active_color_str, get_load_color_str, get_preset_color_str, get_state_color_str,
-    get_sub_color_str, map_to_priority_str, DOCS,
+    get_sub_color_str, map_to_priority_str, DOCS, HELP,
 };
 use log::info;
 use ratatui::{
@@ -267,20 +267,7 @@ pub fn draw_ui(frame: &mut Frame<'_>, app: &App, styler: &Styler) -> Result<()> 
 pub fn draw_help_modal(frame: &mut Frame<'_>, styler: &Styler) -> Result<()> {
     let area = center(frame.area(), Constraint::Max(40), Constraint::Max(20));
 
-    let help_text = "Rounal - Key Mappings\n\n\
-        Move: [hjkl / arrow keys]\n\
-        Select: [Enter]\n\
-        Close logs: [c]\n\
-        Change priority: [1-7] or [Move]\n\
-        Toggle see line in a modal: [K]\n\
-        Yank message: [y] \n\
-        Begin search: [/] \n\
-        Toddle read explanations: [E] \n\
-        Exit search mode: [Esc] \n\
-        Quit: [q / Esc]\n\
-        Toggle Help: [?]\n";
-
-    let help_modal = Paragraph::new(help_text)
+    let help_modal = Paragraph::new(HELP)
         .block(
             Block::bordered().title(" Help ").style(
                 Style::default()

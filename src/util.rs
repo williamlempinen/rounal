@@ -19,6 +19,19 @@ PRESET:
     System default recommendation for enabling services.
 "#;
 
+pub const HELP: &str = "Rounal - Key Mappings\n\n\
+        Move: [hjkl / arrow keys]\n\
+        Select: [Enter]\n\
+        Close logs: [c]\n\
+        Change priority: [1-7] or [Move]\n\
+        Toggle see line in a modal: [K]\n\
+        Yank message: [y] \n\
+        Begin search: [/] \n\
+        Toddle read explanations: [E] \n\
+        Exit search mode: [Esc] \n\
+        Quit: [q / Esc]\n\
+        Toggle Help: [?]\n";
+
 pub trait PadStr {
     fn pad_with(&self, width: usize) -> String;
 }

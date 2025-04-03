@@ -44,7 +44,7 @@ systemctl list-unit-files --type=service --all
 ###
 systemctl list-units --type=service --all
 ###
-sudo journalctl -u <selected-service> -r -p <1-7>
+sudo journalctl --unit=<selected-service> --reverse --priority=<1-7>
 ```
 
 ---
@@ -105,11 +105,12 @@ Some configurations are loaded from `app_config.toml`, for example color configu
 
 There are might be problems regarding copying messages to clipboard. There is ongoing discussion about fixes, [Issues](https://github.com/1Password/arboard/issues)
 
-Terminal's `sudo password` prompt is not `catched` in any way, which can lead to not desired behavior of the ui.
+Terminal's `sudo password` prompt is not `catched` in any way, which can lead to not desired behavior of the ui. Therefore, the program works as intended during the time window when the password is cached.
 
 ### Future work
 - Full rewrite
 - Ability to filter services based on states (sub, load, etc.)
+- Ability to make actions, for example `systemctl <start|stop>`
 - Highlighting search matches
 - Horizontal scrolling for longer messages
 - More responsive layout
