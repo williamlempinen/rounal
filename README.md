@@ -54,7 +54,7 @@ Visit the [Releases](https://github.com/williamlempinen/rounal/releases) page an
 
 ```sh
 # Install
-sudo dpkg -i rounal_0.1.0_amd64.deb
+sudo dpkg -i rounal_0.1.0-1_amd64.deb
 # Running after install
 rounal
 ```
