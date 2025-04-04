@@ -155,7 +155,6 @@ fn render_after_clear<T: Widget>(f: &mut Frame<'_>, clearable: Rect, w: T) {
 // handle the result/error
 pub fn draw_ui(frame: &mut Frame<'_>, app: &App, styler: &Styler) -> Result<()> {
     let terminal_layout = Layout::default()
-        .margin(GLOBAL_MARGIN)
         .direction(Direction::Vertical)
         .constraints([Constraint::Percentage(97), Constraint::Percentage(3)])
         .split(frame.area());

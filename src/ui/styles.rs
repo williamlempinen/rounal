@@ -18,8 +18,6 @@ use ratatui::{
     widgets::{ListItem, Paragraph},
 };
 
-pub(crate) const GLOBAL_MARGIN: u16 = 1;
-
 #[derive(Debug)]
 pub struct Styler {
     pub config: Config,
