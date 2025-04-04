@@ -5,7 +5,7 @@ use crate::core::{
     journal::JournalLog,
     system::{ServiceUnitFiles, ServiceUnits},
 };
-use crate::ui::{layouts::center, styles::GLOBAL_MARGIN};
+use crate::ui::layouts::center;
 use crate::util::{
     get_active_color_str, get_load_color_str, get_preset_color_str, get_state_color_str,
     get_sub_color_str, map_to_priority_str, DOCS, HELP,
