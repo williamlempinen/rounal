@@ -105,10 +105,10 @@ Some configurations are loaded from `app_config.toml`, for example color configu
 
 There are might be problems regarding copying messages to clipboard. There is ongoing discussion about fixes, [Issues](https://github.com/1Password/arboard/issues)
 
-Terminal's `sudo password` prompt is not `catched` in any way, which can lead to not desired behavior of the ui. Therefore, the program works as intended during the time window when the password is cached.
+Terminal's `sudo password` prompt is not `captured` in any way, which can lead to not desired behavior of the ui. Therefore, the program works as intended during the time window when the password is cached.
 
 ### Future work
-- Full rewrite
+- Some of the configuration options are still not implemented
 - Ability to filter services based on states (sub, load, etc.)
 - Ability to make actions, for example `systemctl <start|stop>`
 - Highlighting search matches
