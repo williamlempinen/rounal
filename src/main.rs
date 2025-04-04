@@ -16,7 +16,10 @@ async fn main() -> Result<()> {
     };
 
     let config = Config::load(&config_path)?;
-    let _ = log_to_file("debug.log", config.options.to_level_filter());
+
+    if cfg!(debug_assertions) {
+        let _ = log_to_file("debug.log", config.options.to_level_filter());
+    }
 
     info!("CONFIG: {:?}", config);
     info!("Rounal STARTING");
