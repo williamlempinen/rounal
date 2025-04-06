@@ -18,8 +18,6 @@ use ratatui::{
     widgets::{ListItem, Paragraph},
 };
 
-pub(crate) const GLOBAL_MARGIN: u16 = 1;
-
 #[derive(Debug)]
 pub struct Styler {
     pub config: Config,
@@ -218,6 +216,34 @@ impl Styler {
                 Style::default().fg(self.config.get_palette_color("blue")),
             ),
         ])))
+    }
+
+    pub(crate) fn create_actions_units(
+        &self,
+        index: usize,
+        current_line: usize,
+        unit: &ServiceUnits,
+    ) -> ListItem<'static> {
+        let is_on_cursor = index == current_line;
+        let is_running = unit.is_running();
+        ListItem::from(Text::from(Line::from(vec![Span::styled(
+            "helloworld",
+            Style::default().fg(self.config.get_palette_color("blue")),
+        )])))
+    }
+
+    pub(crate) fn create_actions_files(
+        &self,
+        index: usize,
+        current_line: usize,
+        unit: &ServiceUnitFiles,
+    ) -> ListItem<'static> {
+        let is_on_cursor = index == current_line;
+        let is_enabled = unit.is_enabled();
+        ListItem::from(Text::from(Line::from(vec![Span::styled(
+            "helloworld",
+            Style::default().fg(self.config.get_palette_color("blue")),
+        )])))
     }
 
     pub fn create_units_list_item(

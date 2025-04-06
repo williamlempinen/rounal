@@ -2,6 +2,13 @@ use crate::core::error::{Result, RounalError};
 use log::info;
 use tokio::process::Command;
 
+#[derive(Debug)]
+pub enum Action {
+    Start,
+    Stop,
+    Restart,
+}
+
 #[derive(Debug, Clone)]
 pub enum State {
     Enabled,
@@ -69,7 +76,7 @@ impl Load {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Active {
     Active,
     InActive,
@@ -86,7 +93,7 @@ impl Active {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Sub {
     Running,
     Exited,
@@ -126,6 +133,12 @@ pub struct ServiceUnits {
     pub description: String,
 }
 
+impl ServiceUnits {
+    pub fn is_running(&self) -> bool {
+        self.active == Active::Active && self.sub == Sub::Running
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct ServiceUnitFiles {
     pub name: String,
@@ -133,15 +146,46 @@ pub struct ServiceUnitFiles {
     pub preset: Preset,
 }
 
-pub async fn start_service(name: &String) -> Result<()> {
-    Ok(())
-}
-pub async fn restart_service(name: &String) -> Result<()> {
-    Ok(())
-}
+impl ServiceUnitFiles {
+    pub fn is_enabled(&self) -> bool {
+        match self.state {
+            State::Enabled | State::EnabledRuntime => true,
+            _ => false,
+        }
+    }
 
-pub async fn stop_service(name: &String) -> Result<()> {
-    Ok(())
+    pub async fn start_service(&self) -> Result<()> {
+        Command::new("sudo")
+            .arg("systemctl")
+            .arg("start")
+            .arg(&self.name.as_str())
+            .output()
+            .await
+            .map_err(|e| RounalError::SystemCtlError(format!("{:?}", e)))?;
+        Ok(())
+    }
+
+    pub async fn restart_service(&self) -> Result<()> {
+        Command::new("sudo")
+            .arg("systemctl")
+            .arg("restart")
+            .arg(&self.name.as_str())
+            .output()
+            .await
+            .map_err(|e| RounalError::SystemCtlError(format!("{:?}", e)))?;
+        Ok(())
+    }
+
+    pub async fn stop_service(&self) -> Result<()> {
+        Command::new("sudo")
+            .arg("systemctl")
+            .arg("stop")
+            .arg(&self.name.as_str())
+            .output()
+            .await
+            .map_err(|e| RounalError::SystemCtlError(format!("{:?}", e)))?;
+        Ok(())
+    }
 }
 
 pub async fn get_system_services() -> Result<(Vec<ServiceUnits>, Vec<ServiceUnitFiles>)> {

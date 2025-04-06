@@ -23,7 +23,6 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-// TODO
 #[derive(PartialEq)]
 pub enum Events {
     Quit,
@@ -32,6 +31,7 @@ pub enum Events {
     GetLineInModal,
     Search,
     Docs,
+    Actions,
 }
 
 // TODO:
@@ -198,6 +198,9 @@ async fn run<B: Backend>(terminal: &mut Terminal<B>, mut app: App, styler: Style
                         app.set_logs(all_logs_for_service);
                         info!("journals set to app");
                     }
+                }
+                Events::Actions => {
+                    info!("Actions events launched");
                 }
             }
         }

@@ -5,7 +5,7 @@ use crate::core::{
     journal::JournalLog,
     system::{ServiceUnitFiles, ServiceUnits},
 };
-use crate::ui::{layouts::center, styles::GLOBAL_MARGIN};
+use crate::ui::layouts::center;
 use crate::util::{
     get_active_color_str, get_load_color_str, get_preset_color_str, get_state_color_str,
     get_sub_color_str, map_to_priority_str, DOCS, HELP,
@@ -18,6 +18,7 @@ use ratatui::{
     widgets::{Block, Clear, List, ListItem, Paragraph, Widget, Wrap},
     Frame,
 };
+use tokio::process::Command;
 
 // logs view could be added here
 #[derive(Debug, Clone, PartialEq)]
@@ -46,6 +47,7 @@ pub struct UI {
     pub search_matches: Vec<CurrentLine>,
     pub selected_priority: Option<u8>,
     pub current_line: usize,
+    pub actions: Vec<Command>,
 }
 
 impl UI {
@@ -62,6 +64,7 @@ impl UI {
             search_matches: vec![],
             selected_priority: Some(5),
             current_line: 0,
+            actions: vec![],
         }
     }
 
@@ -157,7 +160,6 @@ fn render_after_clear<T: Widget>(f: &mut Frame<'_>, clearable: Rect, w: T) {
 // handle the result/error
 pub fn draw_ui(frame: &mut Frame<'_>, app: &App, styler: &Styler) -> Result<()> {
     let terminal_layout = Layout::default()
-        .margin(GLOBAL_MARGIN)
         .direction(Direction::Vertical)
         .constraints([Constraint::Percentage(97), Constraint::Percentage(3)])
         .split(frame.area());
